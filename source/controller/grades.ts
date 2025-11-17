@@ -17,11 +17,9 @@ export async function createGrade(req: express.Request, res: express.Response) {
     return res.sendStatus(400);
   }
 
-  const exists = await grades.findOne({
-    id_student: id_student,
-    id_activity: id_activity,
-  });
-  if (exists) return res.sendStatus(409);
+  const exists = await grades.findOne({id_student: id_student, id_activity: id_activity});
+  if(exists) 
+    return res.sendStatus(409);
 
   const validGrade = await grades.validGrade(id_activity, grade);
   if (!validGrade) return res.send("Invalid Grades");
@@ -59,9 +57,13 @@ export async function listGrades(req: express.Request, res: express.Response) {
 // Updates a grade by id
 export async function updateGrade(req: express.Request, res: express.Response) {
   const { id } = req.params;
-  const { id_student, id_activity } = req.body;
+  const { grade, id_activity } = req.body;
 
-  const exists = await grades.findOne({ id });
+  const validGrade = await grades.validGrade(id_activity, grade);
+  if(!validGrade)
+    return res.sendStatus(400);
+
+  const exists = await grades.findOne({ id_student: id });
   if (!exists) {
     return res.sendStatus(404);
   }
@@ -71,7 +73,7 @@ export async function updateGrade(req: express.Request, res: express.Response) {
     return res.sendStatus(400);
   }
 
-  const studentExists = await grades.isStudent(id_student);
+  const studentExists = await grades.isStudent(Number(id));
   if (!studentExists) {
     return res.sendStatus(400);
   }
@@ -81,6 +83,6 @@ export async function updateGrade(req: express.Request, res: express.Response) {
     return res.sendStatus(400);
   }
 
-  const result = await grades.updateItem(id!, req.body, "id");
+  const result = await grades.updateItem(id!, req.body, "id_student");
   return res.sendStatus(result ? 200 : 400);
 }
