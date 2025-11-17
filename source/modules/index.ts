@@ -1,6 +1,5 @@
 import type { Connection, ResultSetHeader } from "mysql2/promise";
 import { DefaultModule } from "./default.js";
-import express from "express";
 import bcrypt from "bcrypt";
 import { env } from "../config/env.js";
 
@@ -222,8 +221,6 @@ export class Users extends DefaultModule {
     profiles: any[]
   ): Promise<number> {
     const hashedPassword = await bcrypt.hash(data.password, env.saltRounds);
-
-    console.log(profiles);
 
     const validUser = await this.validateFields(data);
     const validProfiles = await this.profile.isValidProfile(profiles);

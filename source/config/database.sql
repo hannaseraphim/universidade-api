@@ -78,7 +78,7 @@ CREATE TABLE materials (
     description VARCHAR(100),
     posted_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
 
-    FOREIGN KEY(id_class) REFERENCES classes(id)
+    FOREIGN KEY(id_class) REFERENCES classes(id) ON DELETE CASCADE
 );
 
 -- =========================
@@ -91,7 +91,7 @@ CREATE TABLE activities (
     description  VARCHAR(100),
     type         VARCHAR(50),
     max_grade    DECIMAL(3,1) NOT NULL,
-    due_date     DATETIME NOT NULL,
+    due_date     DATE NOT NULL,
 
     FOREIGN KEY(id_class) REFERENCES classes(id)
 );
