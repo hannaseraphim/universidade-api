@@ -135,11 +135,7 @@ export class Enrolment extends DefaultModule {
 // Grades table
 export class Grades extends DefaultModule {
   protected table = "grades";
-  protected tableFields = [
-    "id_student",
-    "id_activity",
-    "grade"
-  ];
+  protected tableFields = ["id_student", "id_activity", "grade"];
   protected searchableFields = [...this.tableFields];
   protected users: Users;
   protected associated: Associated;
@@ -175,6 +171,12 @@ export class Grades extends DefaultModule {
     if (!activity) return false;
 
     return grade <= parseInt(activity.max_grade) ? true : false;
+  }
+
+  async findGrades(id: number): Promise<any[]> {
+    const query = "SELECT * FROM grades WHERE id_student = ?";
+    const [rows] = await this.connection.execute(query, [id]);
+    return rows as any[];
   }
 }
 

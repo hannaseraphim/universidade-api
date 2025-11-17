@@ -1,18 +1,13 @@
 import express from "express";
-import {
-  Users,
-  Enrolment,
-  Submissions,
-  Grades,
-  Classes,
-  History,
-} from "../modules/index.js";
+import { Users, Classes, Activities, Grades } from "../modules/index.js";
 import connection from "../config/database.js";
 import bcrypt from "bcrypt";
 import { env } from "../config/env.js";
 
 const userModel = new Users(connection);
 const classesModel = new Classes(connection);
+const activitiesModel = new Activities(connection);
+const gradesModel = new Grades(connection);
 
 // Fetchs the logged user data
 export async function showLogged(req: express.Request, res: express.Response) {
@@ -20,11 +15,13 @@ export async function showLogged(req: express.Request, res: express.Response) {
 
   let user = await userModel.findOne({ id: id });
 
+  const grades = await gradesModel.findGrades(id);
+
   const profiles = req.user?.profiles;
 
   if (profiles?.includes("TEACHER")) {
     const classes = await classesModel.findActiveClassesByTeacher(id);
-    user = { ...user, classes };
+    user = { ...user, classes, grades };
   }
 
   return res.json(user);
