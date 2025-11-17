@@ -2,8 +2,9 @@ import express from "express";
 import { env } from "./config/env.js";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import connection from "./config/database.js";
+import { authenticated } from "./middleware/authentication.js";
 import routes from "./router.js";
+import authRoutes from "./router/auth.js";
 
 // Server configuration
 const app = express();
@@ -17,7 +18,8 @@ app.use(
   })
 );
 app.use(express.json());
-app.use("/api", routes);
+app.use("/api", authenticated, routes);
+app.use("/auth", authRoutes);
 
 // Server start
 app.listen(env.port, () => {

@@ -37,6 +37,24 @@ export class Associated extends DefaultModule {
   constructor(protected connection: Connection) {
     super(connection);
   }
+
+  async findAllAssociated(id: number): Promise<any[]> {
+    const associatedQuery = "SELECT * FROM associated WHERE id_user = ?";
+    const [associatedResult] = await this.connection.execute(associatedQuery, [
+      id,
+    ]);
+
+    const associated = (associatedResult as any[]).map((a) => a.id_profile);
+    
+    const placeholders = associated.map(() => "?").join(", ");
+    const rolesQuery = `SELECT * FROM user_profiles WHERE id IN (${placeholders})`;
+
+    const [rolesResult] = await this.connection.execute(rolesQuery, associated);
+
+    const roles = (rolesResult as any[]).map((r) => r.name);
+
+    return roles as any[];
+  }
 }
 
 // Classes table
