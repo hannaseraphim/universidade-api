@@ -51,7 +51,7 @@ CREATE TABLE classes (
     archived     BOOLEAN NOT NULL DEFAULT false,
 
     FOREIGN KEY(id_course) REFERENCES courses(id) ON DELETE CASCADE, 
-    FOREIGN KEY(id_teacher) REFERENCES users(id)
+    FOREIGN KEY(id_teacher) REFERENCES users(id) ON DELETE CASCADE 
 );
 
 -- =========================
@@ -64,8 +64,8 @@ CREATE TABLE enrolment (
   active      BOOLEAN NOT NULL DEFAULT true,
 
   PRIMARY KEY(id_student, id_class),
-  FOREIGN KEY(id_student) REFERENCES users(id),
-  FOREIGN KEY(id_class) REFERENCES classes(id)
+  FOREIGN KEY(id_student) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY(id_class) REFERENCES classes(id) ON DELETE CASCADE
 );
 
 -- =========================
@@ -93,7 +93,7 @@ CREATE TABLE activities (
     max_grade    DECIMAL(3,1) NOT NULL,
     due_date     DATE NOT NULL,
 
-    FOREIGN KEY(id_class) REFERENCES classes(id)
+    FOREIGN KEY(id_class) REFERENCES classes(id) ON DELETE CASCADE
 );
 
 CREATE TABLE submissions (
@@ -103,8 +103,8 @@ CREATE TABLE submissions (
     content      VARCHAR(100),
     PRIMARY KEY(id_student, id_activity),
 
-    FOREIGN KEY(id_student) REFERENCES users(id),
-    FOREIGN KEY(id_activity) REFERENCES activities(id)
+    FOREIGN KEY(id_student) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY(id_activity) REFERENCES activities(id) ON DELETE CASCADE
 );
 
 CREATE TABLE grades (
@@ -113,8 +113,8 @@ CREATE TABLE grades (
     grade           DECIMAL(3,1) NOT NULL,
     submission_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY(id_student, id_activity),
-    FOREIGN KEY(id_student) REFERENCES users(id),
-    FOREIGN KEY(id_activity) REFERENCES activities(id)
+    FOREIGN KEY(id_student) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY(id_activity) REFERENCES activities(id) ON DELETE CASCADE
 );
 
 -- =========================
@@ -126,8 +126,8 @@ CREATE TABLE history (
     final_grade DECIMAL(3,1),
     status      VARCHAR(20),
     PRIMARY KEY(id_student, id_class),
-    FOREIGN KEY(id_student) REFERENCES users(id),
-    FOREIGN KEY(id_class) REFERENCES classes(id)
+    FOREIGN KEY(id_student) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY(id_class) REFERENCES classes(id) ON DELETE CASCADE
 );
 
 -- =============================================
@@ -145,3 +145,4 @@ INSERT INTO courses (id, name, description, max_students) VALUES
   (1, 'Banco de Dados I',  'Introdução a bancos de dados relacionais.', 30),
   (2, 'Programação Web',   'Fundamentos de desenvolvimento Web.',       30),
   (3, 'Algoritmos',        'Lógica de programação e estruturas básicas.', 30);
+  

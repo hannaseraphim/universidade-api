@@ -97,18 +97,17 @@ export class Classes extends DefaultModule {
     }
   }
 
-  async findActiveClassesByTeacher(id: number, ): Promise<any[]> {
+  async findActiveClassesByTeacher(id: number): Promise<any[]> {
     const query = "SELECT * FROM classes WHERE id_teacher = ? AND archived = 0";
     const [rows] = await this.connection.execute(query, [id]);
     return rows as any;
   }
 
-  async findAllClassesByTeacher(id: number, ): Promise<any[]> {
+  async findAllClassesByTeacher(id: number): Promise<any[]> {
     const query = "SELECT * FROM classes WHERE id_teacher = ?";
     const [rows] = await this.connection.execute(query, [id]);
     return rows as any;
   }
-
 }
 
 // Courses table
@@ -137,15 +136,45 @@ export class Enrolment extends DefaultModule {
 export class Grades extends DefaultModule {
   protected table = "grades";
   protected tableFields = [
-    "id_user",
+    "id_student",
     "id_activity",
-    "grade",
-    "submission_date",
+    "grade"
   ];
   protected searchableFields = [...this.tableFields];
+  protected users: Users;
+  protected associated: Associated;
+  protected activities: Activities;
 
   constructor(protected connection: Connection) {
     super(connection);
+    this.users = new Users(connection);
+    this.associated = new Associated(connection);
+    this.activities = new Activities(connection);
+  }
+
+  async isStudent(id: number): Promise<boolean> {
+    const user = await this.users.findOne({ id: id });
+    if (!user) {
+      return false;
+    }
+
+    const profile = await this.associated.findOne({
+      id_user: id,
+      id_profile: 3,
+    });
+
+    if (profile) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  async validGrade(id: number, grade: number): Promise<boolean> {
+    const activity = await this.activities.findOne({ id: id });
+    if (!activity) return false;
+
+    return grade <= parseInt(activity.max_grade) ? true : false;
   }
 }
 
