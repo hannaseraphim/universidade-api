@@ -45,7 +45,7 @@ export class Associated extends DefaultModule {
     ]);
 
     const associated = (associatedResult as any[]).map((a) => a.id_profile);
-    
+
     const placeholders = associated.map(() => "?").join(", ");
     const rolesQuery = `SELECT * FROM user_profiles WHERE id IN (${placeholders})`;
 
@@ -71,9 +71,31 @@ export class Classes extends DefaultModule {
     "archived",
   ];
   protected searchableFields = [...this.tableFields, "id"];
+  protected users: Users;
+  protected associated: Associated;
 
   constructor(protected connection: Connection) {
     super(connection);
+    this.users = new Users(connection);
+    this.associated = new Associated(connection);
+  }
+
+  async isTeacher(id: number): Promise<boolean> {
+    const user = await this.users.findOne({ id: id });
+    if (!user) {
+      return false;
+    }
+
+    const profile = await this.associated.findOne({
+      id_user: id,
+      id_profile: 2,
+    });
+
+    if (profile) {
+      return true;
+    } else {
+      return false;
+    }
   }
 }
 

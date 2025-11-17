@@ -41,7 +41,7 @@ CREATE TABLE courses (
 
 CREATE TABLE classes (
     id   INT AUTO_INCREMENT PRIMARY KEY,
-    id_courses   INT NOT NULL,
+    id_course   INT NOT NULL,
     id_teacher   INT NOT NULL,
     starts_on    DATE NOT NULL,
     ends_on      DATE NOT NULL,
@@ -50,7 +50,7 @@ CREATE TABLE classes (
     max_students INT NULL,
     archived     BOOLEAN NOT NULL DEFAULT false,
 
-    FOREIGN KEY(id_courses) REFERENCES courses(id) ON DELETE CASCADE, 
+    FOREIGN KEY(id_course) REFERENCES courses(id) ON DELETE CASCADE, 
     FOREIGN KEY(id_teacher) REFERENCES users(id)
 );
 
