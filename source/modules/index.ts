@@ -97,6 +97,12 @@ export class Classes extends DefaultModule {
       return false;
     }
   }
+
+  async findClassesByTeacher(id: number): Promise<any[]> {
+    const query = "SELECT * FROM classes WHERE id_teacher = ?";
+    const [rows] = await this.connection.execute(query, [id]);
+    return rows as any;
+  }
 }
 
 // Courses table
