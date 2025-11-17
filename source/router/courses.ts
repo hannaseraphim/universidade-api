@@ -9,6 +9,7 @@ import {
 
 const router = Router();
 
+// /courses Routes
 router.post("/", createCourse);
 router.get("/", listCourses);
 router.get("/:id", getCourse);
