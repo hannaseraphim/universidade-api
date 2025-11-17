@@ -4,18 +4,16 @@ import {
   getUser,
   createUser,
   deleteUser,
-  updateUser
+  updateUser,
 } from "../controller/user.js";
-
-import { restricted } from "../middleware/authentication.js";
 
 const router = Router();
 
 // /users/ Routes
-router.get("/", restricted("ADMIN"), listUsers);
-router.get("/:id", restricted("ADMIN"), getUser);
-router.post("/", restricted("ADMIN"), createUser);
-router.delete("/:id", restricted("ADMIN"), deleteUser);
-router.put("/:id", restricted("ADMIN"), updateUser);
+router.get("/", listUsers);
+router.get("/:id", getUser);
+router.post("/", createUser);
+router.delete("/:id", deleteUser);
+router.put("/:id", updateUser);
 
 export default router;
