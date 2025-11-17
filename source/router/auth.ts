@@ -1,10 +1,10 @@
 import { Router } from "express";
-import { login, logout } from "../middleware/authentication.js";
+import { authenticated, login, logout } from "../middleware/authentication.js";
 
 const router = Router();
 
 // /users/ routes
 router.post("/login", login);
-router.post("/logout", logout);
+router.post("/logout", authenticated, logout);
 
 export default router;

@@ -12,7 +12,7 @@ export const authenticated = (
 ) => {
   const sessionToken = req.cookies["SESSION_TOKEN"];
   if (!sessionToken) {
-    return res.status(401).send("Not logged in");
+    return res.sendStatus(401);
   }
 
   try {

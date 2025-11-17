@@ -5,6 +5,6 @@ import { Router } from "express";
 
 const router = Router();
 
-router.use("/users", restricted("STUDENT"), users);
+router.use("/users", restricted("ADMIN"), users);
 
 export default router;
