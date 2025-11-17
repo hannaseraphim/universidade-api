@@ -73,7 +73,7 @@ export const login = async (req: Request, res: Response) => {
   const profiles = await associated.findAllAssociated(user.id);
 
   const token = jwt.sign(
-    { email: user.email, profiles: profiles },
+    { id: user.id, email: user.email, profiles: profiles },
     env.jwtSecret
   );
 

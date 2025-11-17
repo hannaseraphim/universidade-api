@@ -1,10 +1,11 @@
 import users from "./router/users.js";
-import { restricted } from "./middleware/authentication.js";
+import me from "./router/me.js";
 
 import { Router } from "express";
 
 const router = Router();
 
-router.use("/users", restricted("ADMIN"), users);
+router.use("/users", users);
+router.use("/me", me);
 
 export default router;
