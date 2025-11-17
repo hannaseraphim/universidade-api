@@ -178,6 +178,11 @@ export class Grades extends DefaultModule {
     const [rows] = await this.connection.execute(query, [id]);
     return rows as any[];
   }
+
+  async findGrade(student: number, activity: number): Promise<any> {
+    const result = this.findOne({ id_student: student, id_activity: activity });
+    return result;
+  }
 }
 
 // History table
