@@ -37,6 +37,7 @@ export class Associated extends DefaultModule {
     super(connection);
   }
 
+  // Gets all associated roles by user id
   async findAllAssociated(id: number): Promise<any[]> {
     const associatedQuery = "SELECT * FROM associated WHERE id_user = ?";
     const [associatedResult] = await this.connection.execute(associatedQuery, [
@@ -79,6 +80,7 @@ export class Classes extends DefaultModule {
     this.associated = new Associated(connection);
   }
 
+  // Verifies if the user is a teacher by id
   async isTeacher(id: number): Promise<boolean> {
     const user = await this.users.findOne({ id: id });
     if (!user) {
@@ -97,12 +99,14 @@ export class Classes extends DefaultModule {
     }
   }
 
+  // Gathers all active classes by teacher id
   async findActiveClassesByTeacher(id: number): Promise<any[]> {
     const query = "SELECT * FROM classes WHERE id_teacher = ? AND archived = 0";
     const [rows] = await this.connection.execute(query, [id]);
     return rows as any;
   }
 
+  // Gathers all classes by teacher id, including archived ones
   async findAllClassesByTeacher(id: number): Promise<any[]> {
     const query = "SELECT * FROM classes WHERE id_teacher = ?";
     const [rows] = await this.connection.execute(query, [id]);
@@ -148,6 +152,7 @@ export class Grades extends DefaultModule {
     this.activities = new Activities(connection);
   }
 
+  // Verifies if the user is a student by id
   async isStudent(id: number): Promise<boolean> {
     const user = await this.users.findOne({ id: id });
     if (!user) {
@@ -166,6 +171,7 @@ export class Grades extends DefaultModule {
     }
   }
 
+  // Verifies if the grage isn't bigger than the activity max grade
   async validGrade(id: number, grade: number): Promise<boolean> {
     const activity = await this.activities.findOne({ id: id });
     if (!activity) return false;
@@ -173,12 +179,14 @@ export class Grades extends DefaultModule {
     return grade <= parseInt(activity.max_grade) ? true : false;
   }
 
+  // Lists all grades from an user
   async findGrades(id: number): Promise<any[]> {
     const query = "SELECT * FROM grades WHERE id_student = ?";
     const [rows] = await this.connection.execute(query, [id]);
     return rows as any[];
   }
 
+  // Find a specific grade by student and activity id
   async findGrade(student: number, activity: number): Promise<any> {
     const result = this.findOne({ id_student: student, id_activity: activity });
     return result;
@@ -231,13 +239,10 @@ export class UserProfiles extends DefaultModule {
     super(connection);
   }
 
+  // Validates if its a valid profile (1 "ADMIN", 2 "TEACHER", 3 "STUDENT")
   async isValidProfile(profiles: number[]): Promise<boolean> {
     const allowed = [1, 2, 3];
-
-    // Verifica se todos os valores são permitidos
     const allValid = profiles.every((p) => allowed.includes(p));
-
-    // Verifica se não há valores repetidos (opcional)
     const noDuplicates = new Set(profiles).size === profiles.length;
 
     return allValid && noDuplicates;
