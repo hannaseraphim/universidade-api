@@ -19,10 +19,11 @@ export async function showLogged(req: express.Request, res: express.Response) {
   const id = (req.user as any).id;
 
   let user = await userModel.findOne({ id: id });
+
   const profiles = req.user?.profiles;
 
   if (profiles?.includes("TEACHER")) {
-    const classes = await classesModel.findClassesByTeacher(id);
+    const classes = await classesModel.findActiveClassesByTeacher(id);
     user = { ...user, classes };
   }
 
