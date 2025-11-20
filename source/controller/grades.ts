@@ -90,13 +90,18 @@ export async function updateGrade(req: express.Request, res: express.Response) {
 
 export async function getGrade(req: express.Request, res: express.Response) {
   const { id } = req.params;
-  const { id_activity } = req.body;
 
-  const queryUserGrades = await grades.findGrades(Number(id));
-  if (!queryUserGrades) return res.sendStatus(404);
+  // Verifica se existe body E se contém id_activity
+  if (req.body && typeof req.body === "object" && "id_activity" in req.body) {
+    const { id_activity } = req.body;
 
-  const queryUserActivity = await grades.findGrade(Number(id), id_activity);
-  if (!queryUserActivity) return res.sendStatus(404);
+    const grade = await grades.findGrade(Number(id), Number(id_activity));
+    if (!grade) return res.sendStatus(404);
 
-  return res.status(200).json(queryUserActivity);
+    return res.status(200).json(grade);
+  }
+
+  // Sem id_activity → retornar todas as grades do usuário
+  const gradesList = await grades.findGrades(Number(id));
+  return res.status(200).json(gradesList);
 }
