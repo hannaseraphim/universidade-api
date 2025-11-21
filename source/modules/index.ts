@@ -152,25 +152,6 @@ export class Grades extends DefaultModule {
     this.activities = new Activities(connection);
   }
 
-  // Verifies if the user is a student by id
-  async isStudent(id: number): Promise<boolean> {
-    const user = await this.users.getOneByCondition({ id: id });
-    if (!user) {
-      return false;
-    }
-
-    const profile = await this.associated.getOneByCondition({
-      id_user: id,
-      id_profile: 3,
-    });
-
-    if (profile) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-
   // Verifies if the grage isn't bigger than the activity max grade
   async validGrade(id: number, grade: number): Promise<boolean> {
     const activity = await this.activities.getOneByCondition({ id: id });
@@ -309,6 +290,25 @@ export class Users extends DefaultModule {
     } catch (error) {
       console.log(error);
       return 500;
+    }
+  }
+
+  // Verifies if the user is a student by id
+  async isStudent(id: number): Promise<boolean> {
+    const user = await this.getOneByCondition({ id: id });
+    if (!user) {
+      return false;
+    }
+
+    const profile = await this.associated.getOneByCondition({
+      id_user: id,
+      id_profile: 3,
+    });
+
+    if (profile) {
+      return true;
+    } else {
+      return false;
     }
   }
 
