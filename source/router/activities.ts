@@ -7,7 +7,7 @@ import {
 
 const router = Router();
 
-// /classes/ Routes
+// /activities Routes
 router.post("/", createActivity);
 router.get("/", listActivities);
 router.get("/:id", getActivity);

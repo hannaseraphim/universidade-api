@@ -8,7 +8,7 @@ import {
 
 const router = Router();
 
-// /classes/ Routes
+// /grades Routes
 router.get("/", listGrades);
 router.get("/:id", getGrade);
 router.post("/", createGrade);

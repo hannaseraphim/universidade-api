@@ -7,7 +7,7 @@ import {
 
 const router = Router();
 
-// /courses Routes
+// /materials Routes
 router.post("/", createMaterial);
 router.get("/", listMaterials);
 router.get("/:id", getMaterial);
