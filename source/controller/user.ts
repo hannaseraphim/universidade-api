@@ -3,18 +3,37 @@ import connection from "../config/database.js";
 import express from "express";
 import { env } from "../config/env.js";
 import bcrypt from "bcrypt";
+import { Associated } from "../modules/index.js";
 
 const users = new Users(connection);
-
+const associated = new Associated(connection);
 // List all users from the table
 export async function listUsers(req: express.Request, res: express.Response) {
-  const [rows] = await users.findAll();
+  try {
+    const query = `
+      SELECT 
+        u.id,
+        u.name,
+        u.email,
+        GROUP_CONCAT(p.name) AS profiles
+      FROM users u
+      INNER JOIN associated a ON u.id = a.id_user
+      INNER JOIN user_profiles p ON a.id_profile = p.id
+      GROUP BY u.id, u.name, u.email
+    `;
+    const [rows]: any[] = await connection.execute(query);
 
-  if (!rows) {
-    return res.sendStatus(404);
+    // transformar a string "ADMIN,TEACHER" em array
+    return res.status(200).json(
+      rows.map((row: any) => ({
+        ...row,
+        profiles: row.profiles.split(","),
+      }))
+    );
+  } catch (error) {
+    console.error("Error finding table items: ", error);
+    return [];
   }
-
-  return res.status(200).send(rows as any[]);
 }
 
 // Gets a user from the table by id
@@ -26,7 +45,9 @@ export async function getUser(req: express.Request, res: express.Response) {
     return res.sendStatus(404);
   }
 
-  return res.status(200).send(result);
+  const profiles = await associated.findAllAssociated(Number(id));
+
+  return res.status(200).send({ result, profiles });
 }
 
 // Creates a user with the associated profiles

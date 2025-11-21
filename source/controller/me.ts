@@ -20,16 +20,23 @@ const associatedModel = new Associated(connection);
 export async function showLogged(req: express.Request, res: express.Response) {
   const id = (req.user as any).id;
 
-  let user = await userModel.findOne({ id: id });
+  const userQuery = "SELECT u.id, u.name, u.email FROM users u WHERE u.id = ?";
+  const [rows]: any[] = await connection.execute(userQuery, [id]);
+
+  const user = rows[0];
 
   const grades = await gradesModel.findGrades(id);
-
   const profiles = await associatedModel.findAllAssociated(id);
-
   const classes = await classesModel.findActiveClassesByTeacher(id);
-  user = { ...user, classes, grades, profiles };
 
-  return res.json(user);
+  const result = {
+    ...user,
+    grades,
+    profiles,
+    classes,
+  };
+
+  return res.json(result);
 }
 
 // Edits personal information
