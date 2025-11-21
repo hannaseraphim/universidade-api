@@ -5,9 +5,14 @@ import cookieParser from "cookie-parser";
 import { authenticated } from "./middleware/authentication.js";
 import routes from "./router.js";
 import authRoutes from "./router/auth.js";
+import http from "http";
+import { setupSocket } from "./config/socket.js";
 
-// Server configuration
+// =========================
+//  APP EXPRESS
+// =========================
 const app = express();
+
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 app.use(
@@ -19,10 +24,21 @@ app.use(
   })
 );
 app.use(express.json());
+
 app.use("/api", authenticated, routes);
 app.use("/auth", authRoutes);
 
-// Server start
-app.listen(env.port, () => {
+// =========================
+//  HTTP SERVER + SOCKET.IO
+// =========================
+const server = http.createServer(app);
+
+// inicializa o socket
+export const io = setupSocket(server);
+
+// =========================
+//  START
+// =========================
+server.listen(env.port, () => {
   console.log(`Server is running on port ${env.port}`);
 });
