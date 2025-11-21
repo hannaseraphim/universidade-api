@@ -26,7 +26,7 @@ export async function showLogged(req: express.Request, res: express.Response) {
   const user = rows[0];
 
   const grades = await gradesModel.findGrades(id);
-  const profiles = await associatedModel.findAllAssociated(id);
+  const profiles = await associatedModel.getAllAssociated(id);
   const classes = await classesModel.findActiveClassesByTeacher(id);
 
   const result = {
@@ -55,6 +55,6 @@ export async function editLogged(req: express.Request, res: express.Response) {
     return res.sendStatus(400);
   }
 
-  const result = await userModel.updateItem(id!, data, "id");
+  const result = await userModel.update(id!, data, "id");
   return res.sendStatus(result ? 200 : 400);
 }

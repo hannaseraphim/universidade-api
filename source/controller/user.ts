@@ -39,13 +39,13 @@ export async function listUsers(req: express.Request, res: express.Response) {
 // Gets a user from the table by id
 export async function getUser(req: express.Request, res: express.Response) {
   const { id } = req.params;
-  const result = await users.findOne({ id: id });
+  const result = await users.getSpecificByCondition({ id: id });
 
   if (!result) {
     return res.sendStatus(404);
   }
 
-  const profiles = await associated.findAllAssociated(Number(id));
+  const profiles = await associated.getAllAssociated(Number(id));
 
   return res.status(200).send({ result, profiles });
 }
@@ -75,13 +75,13 @@ export async function createUser(req: express.Request, res: express.Response) {
 export async function deleteUser(req: express.Request, res: express.Response) {
   const { id } = req.params;
 
-  const exists = await users.findOne({ id: id });
+  const exists = await users.getSpecificByCondition({ id: id });
 
   if (!exists) {
     return res.sendStatus(404);
   }
 
-  const result = await users.deleteItem(id!, "id");
+  const result = await users.delete(id!, "id");
   if (result) {
     return res.sendStatus(200);
   } else {
@@ -93,7 +93,7 @@ export async function deleteUser(req: express.Request, res: express.Response) {
 export async function updateUser(req: express.Request, res: express.Response) {
   const { id } = req.params;
 
-  const exists = await users.findOne({ id });
+  const exists = await users.getSpecificByCondition({ id });
   if (!exists) {
     return res.sendStatus(404);
   }
@@ -110,6 +110,6 @@ export async function updateUser(req: express.Request, res: express.Response) {
     return res.sendStatus(400);
   }
 
-  const result = await users.updateItem(id!, data, "id");
+  const result = await users.update(id!, data, "id");
   return res.sendStatus(result ? 200 : 400);
 }

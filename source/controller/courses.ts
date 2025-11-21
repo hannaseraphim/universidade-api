@@ -20,14 +20,14 @@ export async function createCourse(
     return res.sendStatus(400);
   }
 
-  const exists = await courses.findOne({ name: name });
+  const exists = await courses.getSpecificByCondition({ name: name });
 
   if (exists) {
     return res.sendStatus(409);
   }
 
   try {
-    const row = await courses.createItem(req.body);
+    const row = await courses.create(req.body);
     return res.sendStatus(200);
   } catch (error) {
     return res.sendStatus(400);
@@ -39,7 +39,7 @@ export async function createCourse(
 // Lists all created courses
 export async function listCourses(req: express.Request, res: express.Response) {
   try {
-    const [rows] = await courses.findAll();
+    const [rows] = await courses.getAll();
     return res.status(200).json(rows);
   } catch (error) {
     console.log(error);
@@ -54,7 +54,7 @@ export async function updateCourse(
 ) {
   const { id } = req.params;
 
-  const exists = await courses.findOne({ id });
+  const exists = await courses.getSpecificByCondition({ id });
   if (!exists) {
     return res.sendStatus(404);
   }
@@ -64,7 +64,7 @@ export async function updateCourse(
     return res.sendStatus(400);
   }
 
-  const result = await courses.updateItem(id!, req.body, "id");
+  const result = await courses.update(id!, req.body, "id");
   return res.sendStatus(result ? 200 : 400);
 }
 
@@ -75,13 +75,13 @@ export async function deleteCourse(
 ) {
   const { id } = req.params;
 
-  const exists = await courses.findOne({ id: id });
+  const exists = await courses.getSpecificByCondition({ id: id });
 
   if (!exists) {
     return res.sendStatus(404);
   }
 
-  const result = await courses.deleteItem(id!, "id");
+  const result = await courses.delete(id!, "id");
   if (result) {
     return res.sendStatus(200);
   } else {
@@ -92,7 +92,7 @@ export async function deleteCourse(
 // Fetchs a course by id
 export async function getCourse(req: express.Request, res: express.Response) {
   const { id } = req.params;
-  const result = await courses.findOne({ id: id });
+  const result = await courses.getSpecificByCondition({ id: id });
 
   if (!result) {
     return res.sendStatus(404);

@@ -8,7 +8,7 @@ export abstract class DefaultModule {
   constructor(protected connection: Connection) {}
 
   // Create a new item in the table
-  async createItem(data: Record<string, any>): Promise<ResultSetHeader> {
+  async create(data: Record<string, any>): Promise<ResultSetHeader> {
     try {
       const fields = Object.keys(data).filter((key) =>
         this.tableFields.includes(key)
@@ -27,8 +27,8 @@ export abstract class DefaultModule {
     }
   }
 
-  // Find items based on criteria
-  async findOne(criteria: Record<string, any>): Promise<any | null> {
+  // Find one item based on a condition
+  async getOneByCondition(criteria: Record<string, any>): Promise<any | null> {
     try {
       const validKeys = Object.keys(criteria).filter((key) =>
         this.searchableFields.includes(key)
@@ -52,7 +52,7 @@ export abstract class DefaultModule {
   }
 
   // Find all table items
-  async findAll(): Promise<any[]> {
+  async getAll(): Promise<any[]> {
     try {
       const query = `SELECT * FROM ${this.table}`;
       const [rows]: any[] = await this.connection.execute(query);
@@ -63,8 +63,58 @@ export abstract class DefaultModule {
     }
   }
 
+  // Find all items based on a condition
+  async getSpecificByCondition(
+    criteria: Record<string, any>
+  ): Promise<any | null> {
+    try {
+      const validKeys = Object.keys(criteria).filter((key) =>
+        this.searchableFields.includes(key)
+      );
+
+      if (validKeys.length === 0) return null;
+
+      const whereClauses = validKeys.map((key) => `${key} = ?`);
+      const values = validKeys.map((key) => criteria[key]);
+
+      const whereStatement = `WHERE ${whereClauses.join(" AND ")}`;
+      const query = `SELECT * FROM ${this.table} ${whereStatement}`;
+
+      const [rows] = await this.connection.execute(query, values);
+
+      return Array.isArray(rows) && rows.length > 0 ? rows : [];
+    } catch (error) {
+      console.error("Error finding item:", error);
+      return null;
+    }
+  }
+
+  // Find all items based on a condition
+  async countByCondition(criteria: Record<string, any>): Promise<any | null> {
+    try {
+      const validKeys = Object.keys(criteria).filter((key) =>
+        this.searchableFields.includes(key)
+      );
+
+      if (validKeys.length === 0) return null;
+
+      const whereClauses = validKeys.map((key) => `${key} = ?`);
+      const values = validKeys.map((key) => criteria[key]);
+
+      const whereStatement = `WHERE ${whereClauses.join(" AND ")}`;
+      const query = `SELECT count(*) FROM ${this.table} ${whereStatement}`;
+
+      const [rows] = await this.connection.execute(query, values);
+
+      return Array.isArray(rows) && rows.length > 0 ? rows : [];
+    } catch (error) {
+      console.error("Error finding item:", error);
+      return null;
+    }
+  }
+
   // Update items based on criteria
-  async updateItem(
+  async update(
     id: number | string,
     data: Record<string, any>,
     whereField: string | "id"
@@ -88,7 +138,7 @@ export abstract class DefaultModule {
   }
 
   // Delete item from table
-  async deleteItem(id: number | string, criteria: string): Promise<boolean> {
+  async delete(id: number | string, criteria: string): Promise<boolean> {
     try {
       const query = `DELETE FROM ${this.table} WHERE ${criteria} = ?`;
       await this.connection.execute(query, [id]);

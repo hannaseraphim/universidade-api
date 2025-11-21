@@ -36,7 +36,7 @@ export async function createClass(req: express.Request, res: express.Response) {
     return res.sendStatus(400);
   }
 
-  const courseExists = await courses.findOne({ id: id_course });
+  const courseExists = await courses.getSpecificByCondition({ id: id_course });
   if (!courseExists) {
     return res.sendStatus(400);
   }
@@ -47,7 +47,7 @@ export async function createClass(req: express.Request, res: express.Response) {
     return res.send("No teachers found");
   }
 
-  const classExists = await classes.findOne({
+  const classExists = await classes.getSpecificByCondition({
     id_course: id_course,
     id_teacher: id_teacher,
   });
@@ -57,7 +57,7 @@ export async function createClass(req: express.Request, res: express.Response) {
   }
 
   try {
-    const row = await classes.createItem(req.body);
+    const row = await classes.create(req.body);
     return res.sendStatus(200);
   } catch (error) {
     return res.sendStatus(400);
@@ -67,7 +67,7 @@ export async function createClass(req: express.Request, res: express.Response) {
 // Lists all created classes
 export async function listClasses(req: express.Request, res: express.Response) {
   try {
-    const [rows] = await classes.findAll();
+    const [rows] = await classes.getAll();
     return res.status(200).json(rows);
   } catch (error) {
     console.log(error);
@@ -80,12 +80,12 @@ export async function updateClass(req: express.Request, res: express.Response) {
   const { id } = req.params;
   const { id_course, id_teacher } = req.body;
 
-  const exists = await classes.findOne({ id });
+  const exists = await classes.getSpecificByCondition({ id });
   if (!exists) {
     return res.sendStatus(404);
   }
 
-  const courseExists = await courses.findOne({ id: id_course });
+  const courseExists = await courses.getSpecificByCondition({ id: id_course });
   if (!courseExists) {
     return res.sendStatus(400);
   }
@@ -96,7 +96,7 @@ export async function updateClass(req: express.Request, res: express.Response) {
     return res.sendStatus(400);
   }
 
-  const classExists = await classes.findOne({
+  const classExists = await classes.getSpecificByCondition({
     id_course: id_course,
     id_teacher: id_teacher,
   });
@@ -110,7 +110,7 @@ export async function updateClass(req: express.Request, res: express.Response) {
     return res.sendStatus(400);
   }
 
-  const result = await classes.updateItem(id!, req.body, "id");
+  const result = await classes.update(id!, req.body, "id");
   return res.sendStatus(result ? 200 : 400);
 }
 
@@ -118,13 +118,13 @@ export async function updateClass(req: express.Request, res: express.Response) {
 export async function deleteClass(req: express.Request, res: express.Response) {
   const { id } = req.params;
 
-  const exists = await classes.findOne({ id: id });
+  const exists = await classes.getSpecificByCondition({ id: id });
 
   if (!exists) {
     return res.sendStatus(404);
   }
 
-  const result = await classes.deleteItem(id!, "id");
+  const result = await classes.delete(id!, "id");
   if (result) {
     return res.sendStatus(200);
   } else {
@@ -135,7 +135,7 @@ export async function deleteClass(req: express.Request, res: express.Response) {
 // Fetchs a class by id
 export async function getClass(req: express.Request, res: express.Response) {
   const { id } = req.params;
-  const result = await classes.findOne({ id: id });
+  const result = await classes.getSpecificByCondition({ id: id });
 
   if (!result) {
     return res.sendStatus(404);

@@ -59,7 +59,7 @@ export const login = async (req: Request, res: Response) => {
   const users = new Users(connection);
   const associated = new Associated(connection);
 
-  const user = await users.findOne({ email: email });
+  const user = await users.getOneByCondition({ email: email });
   if (!user) {
     return res.sendStatus(404);
   }
@@ -70,7 +70,7 @@ export const login = async (req: Request, res: Response) => {
     return res.sendStatus(401);
   }
 
-  const profiles = await associated.findAllAssociated(user.id);
+  const profiles = await associated.getAllAssociated(user.id);
 
   const token = jwt.sign(
     { id: user.id, email: user.email, profiles: profiles },

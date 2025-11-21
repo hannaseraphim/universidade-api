@@ -20,14 +20,14 @@ export async function createMaterial(
     return res.sendStatus(400);
   }
 
-  const exists = await materials.findOne({ title: title });
+  const exists = await materials.getSpecificByCondition({ title: title });
 
   if (exists) {
     return res.sendStatus(409);
   }
 
   try {
-    const row = await materials.createItem(req.body);
+    const row = await materials.create(req.body);
     return res.sendStatus(200);
   } catch (error) {
     return res.sendStatus(400);
@@ -40,7 +40,7 @@ export async function listMaterials(
   res: express.Response
 ) {
   try {
-    const [rows] = await materials.findAll();
+    const [rows] = await materials.getAll();
     return res.status(200).json(rows);
   } catch (error) {
     console.log(error);
@@ -51,7 +51,7 @@ export async function listMaterials(
 // Fetchs a material by id
 export async function getMaterial(req: express.Request, res: express.Response) {
   const { id } = req.params;
-  const result = await materials.findOne({ id: id });
+  const result = await materials.getSpecificByCondition({ id: id });
 
   if (!result) {
     return res.sendStatus(404);

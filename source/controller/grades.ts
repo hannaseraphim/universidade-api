@@ -17,7 +17,7 @@ export async function createGrade(req: express.Request, res: express.Response) {
     return res.sendStatus(400);
   }
 
-  const exists = await grades.findOne({
+  const exists = await grades.getSpecificByCondition({
     id_student: id_student,
     id_activity: id_activity,
   });
@@ -32,13 +32,15 @@ export async function createGrade(req: express.Request, res: express.Response) {
   const studentExists = await grades.isStudent(id_student);
   if (!studentExists) return res.send("Student not found");
 
-  const activityExists = await activities.findOne({ id: id_activity });
+  const activityExists = await activities.getSpecificByCondition({
+    id: id_activity,
+  });
   if (!activityExists) return res.send("Activity not found");
 
   const data = { ...req.body, submission_date: new Date() };
 
   try {
-    const row = await grades.createItem(data);
+    const row = await grades.create(data);
     return res.sendStatus(200);
   } catch (error) {
     return res.sendStatus(400);
@@ -48,7 +50,7 @@ export async function createGrade(req: express.Request, res: express.Response) {
 // Lists all created grades
 export async function listGrades(req: express.Request, res: express.Response) {
   try {
-    const [rows] = await grades.findAll();
+    const [rows] = await grades.getAll();
     return res.status(200).json(rows);
   } catch (error) {
     console.log(error);
@@ -64,7 +66,7 @@ export async function updateGrade(req: express.Request, res: express.Response) {
   const validGrade = await grades.validGrade(id_activity, grade);
   if (!validGrade) return res.sendStatus(400);
 
-  const exists = await grades.findOne({ id_student: id });
+  const exists = await grades.getSpecificByCondition({ id_student: id });
   if (!exists) {
     return res.sendStatus(404);
   }
@@ -79,12 +81,14 @@ export async function updateGrade(req: express.Request, res: express.Response) {
     return res.sendStatus(400);
   }
 
-  const activityExists = await activities.findOne({ id: id_activity });
+  const activityExists = await activities.getSpecificByCondition({
+    id: id_activity,
+  });
   if (!activityExists) {
     return res.sendStatus(400);
   }
 
-  const result = await grades.updateItem(id!, req.body, "id_student");
+  const result = await grades.update(id!, req.body, "id_student");
   return res.sendStatus(result ? 200 : 400);
 }
 

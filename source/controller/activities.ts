@@ -26,14 +26,14 @@ export async function createActivity(
     return res.json("Invalid fields provided.");
   }
 
-  const exists = await activity.findOne({ title: title });
+  const exists = await activity.getSpecificByCondition({ title: title });
 
   if (exists) {
     return res.sendStatus(409);
   }
 
   try {
-    const row = await activity.createItem(req.body);
+    const row = await activity.create(req.body);
     return res.sendStatus(200);
   } catch (error) {
     return res.sendStatus(400);
@@ -46,7 +46,7 @@ export async function listActivities(
   res: express.Response
 ) {
   try {
-    const [rows] = await activity.findAll();
+    const [rows] = await activity.getAll();
     return res.status(200).json(rows);
   } catch (error) {
     console.log(error);
@@ -57,7 +57,7 @@ export async function listActivities(
 // Fetchs a activity by id
 export async function getActivity(req: express.Request, res: express.Response) {
   const { id } = req.params;
-  const result = await activity.findOne({ id: id });
+  const result = await activity.getSpecificByCondition({ id: id });
 
   if (!result) {
     return res.sendStatus(404);

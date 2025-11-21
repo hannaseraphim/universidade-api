@@ -38,7 +38,7 @@ export class Associated extends DefaultModule {
   }
 
   // Gets all associated roles by user id
-  async findAllAssociated(id: number): Promise<any[]> {
+  async getAllAssociated(id: number): Promise<any[]> {
     const associatedQuery = "SELECT * FROM associated WHERE id_user = ?";
     const [associatedResult] = await this.connection.execute(associatedQuery, [
       id,
@@ -82,12 +82,12 @@ export class Classes extends DefaultModule {
 
   // Verifies if the user is a teacher by id
   async isTeacher(id: number): Promise<boolean> {
-    const user = await this.users.findOne({ id: id });
+    const user = await this.users.getOneByCondition({ id: id });
     if (!user) {
       return false;
     }
 
-    const profile = await this.associated.findOne({
+    const profile = await this.associated.getOneByCondition({
       id_user: id,
       id_profile: 2,
     });
@@ -107,7 +107,7 @@ export class Classes extends DefaultModule {
   }
 
   // Gathers all classes by teacher id, including archived ones
-  async findAllClassesByTeacher(id: number): Promise<any[]> {
+  async getAllClassesByTeacher(id: number): Promise<any[]> {
     const query = "SELECT * FROM classes WHERE id_teacher = ?";
     const [rows] = await this.connection.execute(query, [id]);
     return rows as any;
@@ -154,12 +154,12 @@ export class Grades extends DefaultModule {
 
   // Verifies if the user is a student by id
   async isStudent(id: number): Promise<boolean> {
-    const user = await this.users.findOne({ id: id });
+    const user = await this.users.getOneByCondition({ id: id });
     if (!user) {
       return false;
     }
 
-    const profile = await this.associated.findOne({
+    const profile = await this.associated.getOneByCondition({
       id_user: id,
       id_profile: 3,
     });
@@ -173,7 +173,7 @@ export class Grades extends DefaultModule {
 
   // Verifies if the grage isn't bigger than the activity max grade
   async validGrade(id: number, grade: number): Promise<boolean> {
-    const activity = await this.activities.findOne({ id: id });
+    const activity = await this.activities.getOneByCondition({ id: id });
     if (!activity) return false;
 
     return grade <= parseInt(activity.max_grade) ? true : false;
@@ -188,7 +188,10 @@ export class Grades extends DefaultModule {
 
   // Find a specific grade by student and activity id
   async findGrade(student: number, activity: number): Promise<any> {
-    const result = this.findOne({ id_student: student, id_activity: activity });
+    const result = this.getOneByCondition({
+      id_student: student,
+      id_activity: activity,
+    });
     return result;
   }
 }
@@ -277,13 +280,13 @@ export class Users extends DefaultModule {
       return 400;
     }
 
-    const exists = await this.findOne({ email: data.email });
+    const exists = await this.getOneByCondition({ email: data.email });
     if (exists) {
       return 409;
     }
 
     try {
-      const userQuery = await this.createItem({
+      const userQuery = await this.create({
         name: data.name,
         email: data.email,
         password: hashedPassword,
@@ -291,7 +294,7 @@ export class Users extends DefaultModule {
 
       const associatedQuery = await Promise.all(
         profiles.map((pro: number) =>
-          this.associated.createItem({
+          this.associated.create({
             id_user: userQuery.insertId,
             id_profile: pro,
           })
