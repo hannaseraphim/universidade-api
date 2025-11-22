@@ -33,13 +33,10 @@ export async function createEnrolment(
   const studentQuantity = await enrolment.countByCondition({
     id_class: id_class,
   });
-  console.log(studentQuantity.total);
-  console.log(row.max_students);
   if (studentQuantity.total > row.max_students) {
     const roomName = `teacher-${row.id_teacher}`;
-
     io.to(roomName).emit("class:full", {
-      id_class: row.id_class,
+      id_class: row.id,
       teacherId: row.id_teacher,
       id_student: id_student,
       message:
