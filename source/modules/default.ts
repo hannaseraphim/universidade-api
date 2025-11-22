@@ -149,6 +149,31 @@ export abstract class DefaultModule {
       return false;
     }
   }
+  // Delete item from table if the condition is net
+  async deleteByCondition(
+    criteria: Record<string, any>
+  ): Promise<boolean> {
+    try {
+      const validKeys = Object.keys(criteria).filter((key) =>
+        this.searchableFields.includes(key)
+      );
+
+      if (validKeys.length === 0) return false;
+
+      const whereClauses = validKeys.map((key) => `${key} = ?`);
+      const values = validKeys.map((key) => criteria[key]);
+
+      const whereStatement = `WHERE ${whereClauses.join(" AND ")}`;
+      const query = `DELETE FROM ${this.table} ${whereStatement}`;
+
+      const [rows] = await this.connection.execute(query, values);
+
+      return true;
+    } catch (error) {
+      console.error("Error finding item:", error);
+      return false;
+    }
+  }
 
   // Validate fields based on table fields
   async validateFields(data: Record<string, any>): Promise<boolean> {
