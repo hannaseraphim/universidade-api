@@ -10,20 +10,13 @@ export function setupSocket(server: any) {
   });
 
   io.on("connection", (socket) => {
-    console.log("Cliente conectado:", socket.id);
-
-    // professor se identifica e entra numa "sala" própria
-    socket.on("teacher:join", (teacherId: number) => {
+    socket.on("teacher:join", (teacherId: number, name: string) => {
       const roomName = `teacher-${teacherId}`;
       socket.join(roomName);
-      console.log(`Professor ${teacherId} entrou na sala ${roomName}`);
-    });
-
-    socket.on("disconnect", () => {
-      console.log("Cliente saiu:", socket.id);
+      console.log(`Professor ${name} entrou na sala ${roomName}`);
     });
   });
 
   console.log("WebSocket connected");
-  return io; // devolve o io para ser usado em controllers/services
+  return io; 
 }

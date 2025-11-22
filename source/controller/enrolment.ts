@@ -39,9 +39,9 @@ export async function createEnrolment(
     const roomName = `teacher-${row.id_teacher}`;
 
     io.to(roomName).emit("class:full", {
-      id_class,
+      id_class: row.id_class,
       teacherId: row.id_teacher,
-      id_student,
+      id_student: id_student,
       message:
         "A matrícula de um aluno foi recusada por falta de vagas. Avalie aumentar o limite da turma.",
       timestamp: new Date().toISOString(),
