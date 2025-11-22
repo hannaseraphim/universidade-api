@@ -33,8 +33,19 @@ export async function createEnrolment(
   const studentQuantity = await enrolment.countByCondition({
     id_class: id_class,
   });
-  if (studentQuantity > row.max_students) {
-    io.to(row.id_teacher).emit("maxStudentsReached");
+  console.log(studentQuantity.total);
+  console.log(row.max_students);
+  if (studentQuantity.total > row.max_students) {
+    const roomName = `teacher-${row.id_teacher}`;
+
+    io.to(roomName).emit("class:full", {
+      id_class,
+      teacherId: row.id_teacher,
+      id_student,
+      message:
+        "A matrícula de um aluno foi recusada por falta de vagas. Avalie aumentar o limite da turma.",
+      timestamp: new Date().toISOString(),
+    });
     return res.sendStatus(400);
   }
 

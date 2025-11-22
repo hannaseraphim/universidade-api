@@ -102,11 +102,11 @@ export abstract class DefaultModule {
       const values = validKeys.map((key) => criteria[key]);
 
       const whereStatement = `WHERE ${whereClauses.join(" AND ")}`;
-      const query = `SELECT count(*) FROM ${this.table} ${whereStatement}`;
+      const query = `SELECT count(*) AS total FROM ${this.table} ${whereStatement}`;
 
       const [rows] = await this.connection.execute(query, values);
 
-      return Array.isArray(rows) && rows.length > 0 ? rows : [];
+      return Array.isArray(rows) && rows.length > 0 ? rows[0] : [];
     } catch (error) {
       console.error("Error finding item:", error);
       return null;

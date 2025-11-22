@@ -26,7 +26,7 @@ export const env: EnvConfig = {
   jwtSecret: process.env.JWT_SECRET || "your_jwt_secret",
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || "24h",
   saltRounds: process.env.SALT_ROUNDS ? parseInt(process.env.SALT_ROUNDS) : 10,
-  corsOrigin: process.env.CORS_ORIGIN || "*",
+  corsOrigin: process.env.CORS_ORIGIN || "http://localhost:5173",
   corsMethods: process.env.CORS_METHODS || "GET,POST,PUT,DELETE",
   corsHeaders: process.env.CORS_HEADERS || "Content-Type,Authorization",
 };

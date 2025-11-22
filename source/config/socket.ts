@@ -12,8 +12,11 @@ export function setupSocket(server: any) {
   io.on("connection", (socket) => {
     console.log("Cliente conectado:", socket.id);
 
-    socket.emit("notificacao", {
-      mensagem: "Conectado ao WebSocket!",
+    // professor se identifica e entra numa "sala" própria
+    socket.on("teacher:join", (teacherId: number) => {
+      const roomName = `teacher-${teacherId}`;
+      socket.join(roomName);
+      console.log(`Professor ${teacherId} entrou na sala ${roomName}`);
     });
 
     socket.on("disconnect", () => {
