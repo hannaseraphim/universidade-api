@@ -1,9 +1,11 @@
-import { Grades, Activities } from "../modules/index.js";
+import { Grades, Activities, Users, Submissions } from "../modules/index.js";
 import connection from "../config/database.js";
 import express from "express";
 
 const grades = new Grades(connection);
 const activities = new Activities(connection);
+const users = new Users(connection);
+const submissions = new Submissions(connection);
 
 // Creates a new grade
 export async function createGrade(req: express.Request, res: express.Response) {
@@ -17,30 +19,21 @@ export async function createGrade(req: express.Request, res: express.Response) {
     return res.sendStatus(400);
   }
 
-  const exists = await grades.getSpecificByCondition({
+  const submission = await submissions.getOneByCondition({
     id_student: id_student,
     id_activity: id_activity,
   });
-  if (exists) return res.sendStatus(409);
+  if (!submission) return res.sendStatus(400);
 
   const validGrade = await grades.validGrade(id_activity, grade);
-  if (!validGrade) return res.send("Invalid Grades");
-
-  const validFields = await grades.validateFields(req.body);
-  if (!validFields) return res.send("Invalid Fields");
-
-  const studentExists = await grades.isStudent(id_student);
-  if (!studentExists) return res.send("Student not found");
-
-  const activityExists = await activities.getSpecificByCondition({
-    id: id_activity,
-  });
-  if (!activityExists) return res.send("Activity not found");
-
-  const data = { ...req.body, submission_date: new Date() };
+  if(!validGrade) return res.sendStatus(400);
 
   try {
-    const row = await grades.create(data);
+    const row = await grades.create(req.body);
+    const deleteSubmission = await submissions.deleteByCondition({
+      id_student: id_student,
+      id_activity: id_activity,
+    });
     return res.sendStatus(200);
   } catch (error) {
     return res.sendStatus(400);
@@ -72,21 +65,15 @@ export async function updateGrade(req: express.Request, res: express.Response) {
   }
 
   const validFields = await grades.validateFields(req.body);
-  if (!validFields) {
-    return res.sendStatus(400);
-  }
+  if (!validFields) return res.sendStatus(400);
 
-  const studentExists = await grades.isStudent(Number(id));
-  if (!studentExists) {
-    return res.sendStatus(400);
-  }
+  const studentExists = await users.isStudent(Number(id));
+  if (!studentExists) return res.sendStatus(400);
 
   const activityExists = await activities.getSpecificByCondition({
     id: id_activity,
   });
-  if (!activityExists) {
-    return res.sendStatus(400);
-  }
+  if (!activityExists) return res.sendStatus(400);
 
   const result = await grades.update(id!, req.body, "id_student");
   return res.sendStatus(result ? 200 : 400);
