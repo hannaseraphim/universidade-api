@@ -1,12 +1,13 @@
-import { Users } from "../modules/index.js";
+import { Associated, UserProfiles, Users } from "../modules/index.js";
 import connection from "../config/database.js";
 import express from "express";
 import { env } from "../config/env.js";
 import bcrypt from "bcrypt";
-import { Associated } from "../modules/index.js";
 
 const users = new Users(connection);
 const associated = new Associated(connection);
+const profiles = new UserProfiles(connection);
+
 // List all users from the table
 export async function listUsers(req: express.Request, res: express.Response) {
   try {
@@ -42,7 +43,7 @@ export async function getUser(req: express.Request, res: express.Response) {
   const result = await users.getSpecificByCondition({ id: id });
 
   if (!result) {
-    return res.sendStatus(404);
+    return res.status(404).json({ message: "User not found" });
   }
 
   const profiles = await associated.getAllAssociated(Number(id));
@@ -56,7 +57,7 @@ export async function createUser(req: express.Request, res: express.Response) {
   const valid = users.validateUserWithProfile(req.body);
 
   if (!valid) {
-    return res.sendStatus(400);
+    return res.status(400).json({ message: "Fields not valid" });
   }
 
   const rows = await users.createUserWithAssociation(
@@ -78,14 +79,14 @@ export async function deleteUser(req: express.Request, res: express.Response) {
   const exists = await users.getSpecificByCondition({ id: id });
 
   if (!exists) {
-    return res.sendStatus(404);
+    return res.status(404).json({ message: "User not found" });
   }
 
   const result = await users.delete(id!, "id");
   if (result) {
-    return res.sendStatus(200);
+    return res.status(200).json({ message: "User deleted successfully" });
   } else {
-    return res.sendStatus(400);
+    return res.status(400).json({ message: "User could not be deleted" });
   }
 }
 
@@ -93,23 +94,62 @@ export async function deleteUser(req: express.Request, res: express.Response) {
 export async function updateUser(req: express.Request, res: express.Response) {
   const { id } = req.params;
 
-  const exists = await users.getSpecificByCondition({ id });
-  if (!exists) {
-    return res.sendStatus(404);
+  try {
+    // Verifica se o usuário existe
+    const exists = await users.getSpecificByCondition({ id });
+    if (!exists)
+      return res.status(200).json({ message: "User deleted successfully" });
+
+    // Obtém todos os perfis associados
+    const profs = await associated.getAllAssociated(Number(id));
+
+    const data = req.body;
+
+    console.log(profs);
+    console.log(data.profiles);
+
+    // // Deleta todos os perfis antigos
+    // await Promise.all(
+    //   profs.map((profile) =>
+    //     associated.deleteByCondition({
+    //       id_user: data.id,
+    //       id_profile: profile.id,
+    //     })
+    //   )
+    // );
+
+    // // Cria os novos perfis
+    if (data.profiles && Array.isArray(data.profiles)) {
+      await Promise.all(
+        data.profiles.map(
+          (newProf: any) => console.log(newProf)
+          // associated.create({ id_user: data.id, id_profile: newProf.id })
+        )
+      );
+    }
+
+    // Atualiza a senha se fornecida
+    if (data.password) {
+      const hashedPassword = await bcrypt.hash(data.password, env.saltRounds);
+      data.password = hashedPassword;
+    }
+
+    // Valida campos
+    const validFields = await users.validateFields(data);
+    if (!validFields)
+      return res.status(400).json({ message: "Fields not valid" });
+
+    // Atualiza usuário
+    const result = await users.update(Number(id), data, "id");
+    return res
+      .status(result ? 200 : 400)
+      .json(
+        result
+          ? { message: "User updated successfully" }
+          : { message: "User could not be updated" }
+      );
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Internal server error" });
   }
-
-  let data = req.body;
-
-  if (data.password) {
-    const hashedPassword = await bcrypt.hash(data.password, env.saltRounds);
-    data.password = hashedPassword;
-  }
-
-  const validFields = await users.validateFields(data);
-  if (!validFields) {
-    return res.sendStatus(400);
-  }
-
-  const result = await users.update(id!, data, "id");
-  return res.sendStatus(result ? 200 : 400);
 }

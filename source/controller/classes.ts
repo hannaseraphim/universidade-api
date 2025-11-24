@@ -28,23 +28,23 @@ export async function createClass(req: express.Request, res: express.Response) {
     max_students === undefined ||
     archived === undefined
   ) {
-    return res.sendStatus(400);
+    return res.status(400).json({ message: "Missing fields" });
   }
 
   const validFields = await classes.validateFields(req.body);
   if (!validFields) {
-    return res.sendStatus(400);
+    return res.status(400).json({ message: "Fields not valid" });
   }
 
   const courseExists = await courses.getSpecificByCondition({ id: id_course });
   if (!courseExists) {
-    return res.sendStatus(400);
+    return res.status(400).json({ message: "Course not found" });
   }
 
   const isTeacher = await classes.isTeacher(id_teacher);
 
   if (!isTeacher) {
-    return res.send("No teachers found");
+    return res.status(400).json({ message: "No teachers found" });
   }
 
   const classExists = await classes.getSpecificByCondition({
@@ -53,14 +53,15 @@ export async function createClass(req: express.Request, res: express.Response) {
   });
 
   if (classExists) {
-    return res.sendStatus(409);
+    return res.status(409).json({ message: "Class already exists" });
   }
 
   try {
     const row = await classes.create(req.body);
-    return res.sendStatus(200);
+    return res.status(200).json({ message: "Class created successfully" });
   } catch (error) {
-    return res.sendStatus(400);
+    console.log(error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 }
 
@@ -71,7 +72,7 @@ export async function listClasses(req: express.Request, res: express.Response) {
     return res.status(200).json(rows);
   } catch (error) {
     console.log(error);
-    return res.sendStatus(400);
+    return res.status(500).json({ message: "Internal server error" });
   }
 }
 
@@ -121,15 +122,17 @@ export async function deleteClass(req: express.Request, res: express.Response) {
   const exists = await classes.getSpecificByCondition({ id: id });
 
   if (!exists) {
-    return res.sendStatus(404);
+    return res.status(404).json({ message: "Class not found" });
   }
 
   const result = await classes.delete(id!, "id");
-  if (result) {
-    return res.sendStatus(200);
-  } else {
-    return res.sendStatus(400);
-  }
+  return res
+    .status(result ? 200 : 400)
+    .json(
+      result
+        ? { message: "Class deleted successfully" }
+        : { message: "Class could not be deleted" }
+    );
 }
 
 // Fetchs a class by id
@@ -138,7 +141,7 @@ export async function getClass(req: express.Request, res: express.Response) {
   const result = await classes.getSpecificByCondition({ id: id });
 
   if (!result) {
-    return res.sendStatus(404);
+    return res.status(404).json({ message: "Class not found" });
   }
 
   return res.status(200).send(result);

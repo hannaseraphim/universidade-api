@@ -12,25 +12,26 @@ export async function createMaterial(
   const { id_class, title, description } = req.body;
 
   if (!id_class || !title || !description) {
-    return res.sendStatus(400);
+    return res.status(400).json({ message: "Missing fields" });
   }
 
   const validFields = await materials.validateFields(req.body);
   if (!validFields) {
-    return res.sendStatus(400);
+    return res.status(400).json({ message: "Fields not valid" });
   }
 
   const exists = await materials.getSpecificByCondition({ title: title });
 
   if (exists) {
-    return res.sendStatus(409);
+    return res.status(409).json({ message: "Material already exists" });
   }
 
   try {
     const row = await materials.create(req.body);
-    return res.sendStatus(200);
+    return res.status(200).json({ message: "Material created successfully" });
   } catch (error) {
-    return res.sendStatus(400);
+    console.log(error);
+    return res.status(400).json({ message: "Internal server error" });
   }
 }
 
@@ -44,7 +45,7 @@ export async function listMaterials(
     return res.status(200).json(rows);
   } catch (error) {
     console.log(error);
-    return res.sendStatus(400);
+    return res.status(400).json({ message: "Internal server error" });
   }
 }
 
@@ -54,7 +55,7 @@ export async function getMaterial(req: express.Request, res: express.Response) {
   const result = await materials.getSpecificByCondition({ id: id });
 
   if (!result) {
-    return res.sendStatus(404);
+    return res.status(404).json({ message: "Material not found" });
   }
 
   return res.status(200).send(result);

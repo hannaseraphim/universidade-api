@@ -20,42 +20,45 @@ export const createSubmission = async (
 ) => {
   const { id_class, id_student, id_activity, content } = req.body;
   if (!id_class || !id_student || !id_activity || !content)
-    return res.sendStatus(400);
+    return res.status(400).json({ message: "Missing fields" });
 
   const userClass = await classes.getOneByCondition({ id: id_class });
-  if (!userClass) return res.sendStatus(400);
+  if (!userClass) return res.status(400).json({ message: "Class not found" });
 
   const userEnrolment = await enrolment.getOneByCondition({
     id_class: id_class,
     id_student: id_student,
     active: 1,
   });
-  if (!userEnrolment) return res.sendStatus(400);
+  if (!userEnrolment)
+    return res.status(400).json({ message: "Enrolment not found" });
 
   const exists = await submissions.getOneByCondition({
     id_activity: id_activity,
     id_student: id_student,
   });
-  if (exists) return res.sendStatus(409);
+  if (exists)
+    return res.status(409).json({ message: "Submission already exists" });
 
   const activity = await activities.getOneByCondition({
     id: id_activity,
     id_class: id_class,
   });
-  if (!activity) return res.sendStatus(400);
+  if (!activity) return res.status(400).json({ message: "Activity not found" });
 
   const hasGrade = await grades.getOneByCondition({
     id_student: id_student,
     id_activity: id_activity,
   });
-  if (hasGrade) return res.sendStatus(400);
+  if (hasGrade)
+    return res.status(400).json({ message: "Grade already published" });
 
   try {
     const row = submissions.create({ id_student, id_activity, content });
-    return res.sendStatus(200);
+    return res.status(200).json({ message: "Submission sent successfully" });
   } catch (error) {
     console.log(error);
-    return res.sendStatus(400);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -95,6 +98,6 @@ export const listSubmissionsByTeacher = async (
     return res.status(200).json(postedSubmissions);
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ error: "Erro interno no servidor" });
+    return res.status(500).json({ message: "Internal server error" });
   }
 };

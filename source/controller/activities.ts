@@ -14,29 +14,30 @@ export async function createActivity(
   const formatted = now.toISOString().split("T")[0];
 
   if (!id_class || !title || !description || !type || !max_grade || !due_date) {
-    return res.json("Missing fields.");
+    return res.status(400).json("Missing fields");
   }
 
   if (due_date < formatted!) {
-    return res.json("Invalid date.");
+    return res.status(400).json("Date not valid");
   }
 
   const validFields = await activity.validateFields(req.body);
   if (!validFields) {
-    return res.json("Invalid fields provided.");
+    return res.status(400).json("Fields not valid");
   }
 
   const exists = await activity.getSpecificByCondition({ title: title });
 
   if (exists) {
-    return res.sendStatus(409);
+    return res.status(409).json({ message: "Activity already exists" });
   }
 
   try {
     const row = await activity.create(req.body);
-    return res.sendStatus(200);
+    return res.status(200).json({ message: "Activity created successfully" });
   } catch (error) {
-    return res.sendStatus(400);
+    console.log(error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 }
 
@@ -50,7 +51,7 @@ export async function listActivities(
     return res.status(200).json(rows);
   } catch (error) {
     console.log(error);
-    return res.sendStatus(400);
+    return res.status(500).json({ message: "Internal server error" });
   }
 }
 
@@ -60,7 +61,7 @@ export async function getActivity(req: express.Request, res: express.Response) {
   const result = await activity.getSpecificByCondition({ id: id });
 
   if (!result) {
-    return res.sendStatus(404);
+    return res.status(404).json({ message: "Activity not found" });
   }
 
   return res.status(200).send(result);

@@ -25,7 +25,8 @@ export async function showLogged(req: express.Request, res: express.Response) {
       [id]
     );
 
-    if (!userRows.length) return res.sendStatus(404);
+    if (!userRows.length)
+      return res.status(404).json({ message: "User not found" });
 
     const user = userRows[0];
 
@@ -87,7 +88,7 @@ export async function showLogged(req: express.Request, res: express.Response) {
     });
   } catch (err) {
     console.error(err);
-    return res.sendStatus(500);
+    return res.status(500).json({ message: "Internal server error" });
   }
 }
 
@@ -104,9 +105,15 @@ export async function editLogged(req: express.Request, res: express.Response) {
 
   const validFields = await userModel.validateFields(data);
   if (!validFields) {
-    return res.sendStatus(400);
+    return res.status(400).json({ message: "Fields not valid" });
   }
 
   const result = await userModel.update(id!, data, "id");
-  return res.sendStatus(result ? 200 : 400);
+  return res
+    .status(result ? 200 : 400)
+    .json(
+      result
+        ? { message: "User updated successfully" }
+        : { message: "User could not be updated" }
+    );
 }

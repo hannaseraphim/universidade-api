@@ -12,7 +12,7 @@ export const authenticated = (
 ) => {
   const sessionToken = req.cookies["SESSION_TOKEN"];
   if (!sessionToken) {
-    return res.sendStatus(401);
+    return res.status(401).json({ message: "Missing session token" });
   }
 
   try {
@@ -25,7 +25,7 @@ export const authenticated = (
     next();
   } catch (error) {
     console.log(error);
-    return res.sendStatus(403);
+    return res.status(403).json({ message: "Internal server error" });
   }
 };
 
@@ -34,7 +34,7 @@ export const restricted = (...allowedProfiles: string[]) => {
     const user = req.user as { profiles: string[] };
 
     if (!user) {
-      return res.sendStatus(401);
+      return res.status(401).json({ message: "Missing session token" });
     }
 
     const hasAccess = user.profiles.some((profile) =>
@@ -42,7 +42,7 @@ export const restricted = (...allowedProfiles: string[]) => {
     );
 
     if (!hasAccess) {
-      return res.sendStatus(403);
+      return res.status(403).json({ message: "Missing permissions" });
     }
 
     next();
@@ -52,7 +52,7 @@ export const restricted = (...allowedProfiles: string[]) => {
 export const login = async (req: Request, res: Response) => {
   const isSigned = req.cookies["SESSION_TOKEN"];
   if (isSigned) {
-    return res.sendStatus(409);
+    return res.status(409).json({ message: "Already logged in" });
   }
 
   const { email, password } = req.body;
@@ -61,13 +61,13 @@ export const login = async (req: Request, res: Response) => {
 
   const user = await users.getOneByCondition({ email: email });
   if (!user) {
-    return res.sendStatus(404);
+    return res.status(404).json({ message: "User not found" });
   }
 
   const validatePassword = bcrypt.compareSync(password, user.password);
 
   if (!validatePassword) {
-    return res.sendStatus(401);
+    return res.status(401).json({ message: "Invalid password" });
   }
 
   const profiles = await associated.getAllAssociated(user.id);
@@ -78,7 +78,6 @@ export const login = async (req: Request, res: Response) => {
   );
 
   res.cookie("SESSION_TOKEN", token, { httpOnly: true, secure: false });
-
   res.status(200).json({ user, token });
 };
 
@@ -86,14 +85,14 @@ export const logout = async (req: Request, res: Response) => {
   const session = req.cookies["SESSION_TOKEN"];
 
   if (!session) {
-    return res.sendStatus(400);
+    return res.status(404).json({ message: "Not logged in" });
   }
 
   try {
     res.clearCookie("SESSION_TOKEN");
-    return res.sendStatus(200);
+    return res.status(200).json({ message: "Logged out successfully" });
   } catch (error) {
     console.log(error);
-    return res.sendStatus(400);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };

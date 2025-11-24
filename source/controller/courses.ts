@@ -12,28 +12,27 @@ export async function createCourse(
   const { name, description, max_students } = req.body;
 
   if (!name || !description || !max_students) {
-    return res.sendStatus(400);
+    return res.status(400).json({ message: "Missing fields" });
   }
 
   const validFields = await courses.validateFields(req.body);
   if (!validFields) {
-    return res.sendStatus(400);
+    return res.status(400).json({ message: "Fields not valid" });
   }
 
   const exists = await courses.getSpecificByCondition({ name: name });
 
   if (exists) {
-    return res.sendStatus(409);
+    return res.status(409).json({ message: "Course already exists" });
   }
 
   try {
     const row = await courses.create(req.body);
-    return res.sendStatus(200);
+    return res.status(200).json({ message: "Course created successfully" });
   } catch (error) {
-    return res.sendStatus(400);
+    console.log(error);
+    return res.status(500).json({ message: "Internal server error" });
   }
-
-  return res.sendStatus(200);
 }
 
 // Lists all created courses
@@ -43,7 +42,7 @@ export async function listCourses(req: express.Request, res: express.Response) {
     return res.status(200).json(rows);
   } catch (error) {
     console.log(error);
-    return res.sendStatus(400);
+    return res.status(500).json({ message: "Internal server error" });
   }
 }
 
@@ -56,16 +55,22 @@ export async function updateCourse(
 
   const exists = await courses.getSpecificByCondition({ id });
   if (!exists) {
-    return res.sendStatus(404);
+    return res.status(404).json({ message: "Course not found" });
   }
 
   const validFields = await courses.validateFields(req.body);
   if (!validFields) {
-    return res.sendStatus(400);
+    return res.status(400).json({ message: "Fields not valid" });
   }
 
   const result = await courses.update(id!, req.body, "id");
-  return res.sendStatus(result ? 200 : 400);
+  return res
+    .status(result ? 200 : 400)
+    .json(
+      result
+        ? { message: "Course updated successfully" }
+        : { message: "Course could not be updated" }
+    );
 }
 
 // Deletes a course by id
@@ -78,15 +83,17 @@ export async function deleteCourse(
   const exists = await courses.getSpecificByCondition({ id: id });
 
   if (!exists) {
-    return res.sendStatus(404);
+    return res.status(404).json({ message: "Course not found" });
   }
 
   const result = await courses.delete(id!, "id");
-  if (result) {
-    return res.sendStatus(200);
-  } else {
-    return res.sendStatus(400);
-  }
+  return res
+    .status(result ? 200 : 400)
+    .json(
+      result
+        ? { message: "Course deleted successfully" }
+        : { message: "Course could not be deleted" }
+    );
 }
 
 // Fetchs a course by id
@@ -95,7 +102,7 @@ export async function getCourse(req: express.Request, res: express.Response) {
   const result = await courses.getSpecificByCondition({ id: id });
 
   if (!result) {
-    return res.sendStatus(404);
+    return res.status(404).json({ message: "Course not found" });
   }
 
   return res.status(200).send(result);
