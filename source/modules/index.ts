@@ -51,7 +51,7 @@ export class Associated extends DefaultModule {
 
     const [rolesResult] = await this.connection.execute(rolesQuery, associated);
 
-    const roles = (rolesResult as any[]).map((r) => r.name);
+    const roles = rolesResult as any[];
 
     return roles as any[];
   }
