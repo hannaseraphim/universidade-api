@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
+import jwt, { type JwtPayload } from "jsonwebtoken";
 import { Users, Associated } from "../modules/index.js";
 import type { Request, Response, NextFunction } from "express";
 import connection from "../config/database.js";
@@ -29,17 +29,30 @@ export const authenticated = (
   }
 };
 
+type Profile = {
+  id: number;
+  name: string;
+};
+
 export const restricted = (...allowedProfiles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    const user = req.user as { profiles: string[] };
+    const payload = req.user as
+      | (JwtPayload & {
+          id: number;
+          email?: string;
+          profiles: Profile[];
+        })
+      | undefined;
 
-    if (!user) {
+    if (!payload) {
       return res.status(401).json({ message: "Missing session token" });
     }
 
-    const hasAccess = user.profiles.some((profile) =>
-      allowedProfiles.includes(profile)
-    );
+    const profs = payload.profiles.map((p) => p.name);
+
+    const hasAccess = profs.some((prof) => allowedProfiles.includes(prof));
+
+    console.log(profs);
 
     if (!hasAccess) {
       return res.status(403).json({ message: "Missing permissions" });
