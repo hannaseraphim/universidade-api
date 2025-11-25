@@ -1,4 +1,3 @@
-// src/config/socket.ts
 import { Server as SocketIOServer } from "socket.io";
 
 export function setupSocket(server: any) {
@@ -18,5 +17,5 @@ export function setupSocket(server: any) {
   });
 
   console.log("WebSocket connected");
-  return io; 
+  return io;
 }
