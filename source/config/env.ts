@@ -10,7 +10,7 @@ interface EnvConfig {
   dbPort: string;
   jwtSecret: string;
   jwtExpiresIn: string;
-  saltRounds: number; // should be number, not string
+  saltRounds: number; 
   corsOrigin: string;
   corsMethods: string;
   corsHeaders: string;
