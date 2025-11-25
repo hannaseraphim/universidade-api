@@ -97,33 +97,30 @@ export async function updateUser(req: express.Request, res: express.Response) {
   try {
     // Verifica se o usuário existe
     const exists = await users.getSpecificByCondition({ id });
-    if (!exists)
-      return res.status(200).json({ message: "User deleted successfully" });
+    if (!exists) return res.status(404).json({ message: "User not found" });
 
     // Obtém todos os perfis associados
     const profs = await associated.getAllAssociated(Number(id));
 
     const data = req.body;
 
-    console.log(profs);
-    console.log(data.profiles);
-
-    // // Deleta todos os perfis antigos
-    // await Promise.all(
-    //   profs.map((profile) =>
-    //     associated.deleteByCondition({
-    //       id_user: data.id,
-    //       id_profile: profile.id,
-    //     })
-    //   )
-    // );
+    // Deleta todos os perfis antigos
+    await Promise.all(
+      profs.map((profile) => {
+        associated.deleteByCondition({
+          id_user: Number(id),
+          id_profile: profile.id,
+        });
+      })
+    );
 
     // // Cria os novos perfis
     if (data.profiles && Array.isArray(data.profiles)) {
       await Promise.all(
         data.profiles.map(
-          (newProf: any) => console.log(newProf)
-          // associated.create({ id_user: data.id, id_profile: newProf.id })
+          (newProf: any) => {
+            associated.create({ id_user: id, id_profile: newProf });
+          }
         )
       );
     }
@@ -135,12 +132,16 @@ export async function updateUser(req: express.Request, res: express.Response) {
     }
 
     // Valida campos
-    const validFields = await users.validateFields(data);
+    const validFields = await users.validateUserWithProfile(data);
     if (!validFields)
       return res.status(400).json({ message: "Fields not valid" });
 
     // Atualiza usuário
-    const result = await users.update(Number(id), data, "id");
+    const result = await users.update(
+      Number(id),
+      { name: data.name, email: data.email },
+      "id"
+    );
     return res
       .status(result ? 200 : 400)
       .json(
