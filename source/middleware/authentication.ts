@@ -52,8 +52,6 @@ export const restricted = (...allowedProfiles: string[]) => {
 
     const hasAccess = profs.some((prof) => allowedProfiles.includes(prof));
 
-    console.log(profs);
-
     if (!hasAccess) {
       return res.status(403).json({ message: "Missing permissions" });
     }
