@@ -312,9 +312,9 @@ export class Users extends DefaultModule {
     }
   }
 
-  // Validates if is a valid user (name, email, password, profiles)
+  // Validates if is a valid user (name, email, profiles)
   async validateUserWithProfile(data: Record<string, any>): Promise<boolean> {
-    const expectedFields = [...this.tableFields, "profiles"];
+    const expectedFields = ["name", "email", "profiles"];
     const bodyKeys = Object.keys(data);
 
     // Verifica se todos os campos esperados estão presentes
