@@ -12,14 +12,14 @@ import { restricted } from "./middleware/authentication.js";
 
 const router = Router();
 
-router.use("/users", restricted("ADMIN"), users);
-router.use("/courses", restricted("ADMIN"), courses);
-router.use("/classes", restricted("ADMIN"), classes);
-router.use("/materials", restricted("TEACHER"), materials);
-router.use("/activities", restricted("TEACHER"), activities);
-router.use("/grades", restricted("TEACHER"), grades);
-router.use("/enrolments", restricted("TEACHER"), enrolment);
-router.use("/submissions", restricted("TEACHER"), submissions);
+router.use("/users", restricted("Administrador"), users);
+router.use("/courses", restricted("Administrador"), courses);
+router.use("/classes", restricted("Administrador"), classes);
+router.use("/materials", restricted("Professor"), materials);
+router.use("/activities", restricted("Professor"), activities);
+router.use("/grades", restricted("Professor"), grades);
+router.use("/enrolments", restricted("Professor"), enrolment);
+router.use("/submissions", restricted("Professor"), submissions);
 router.use("/me", me);
 
 export default router;
