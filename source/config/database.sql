@@ -134,20 +134,87 @@ CREATE TABLE history (
 -- POPULAÇÃO INICIAL DO BANCO universidadedb
 -- =============================================
 
--- -- PERFIS DE USUÁRIO
+--
 INSERT INTO user_profiles (id, name) VALUES
   (1, 'Administrador'),
   (2, 'Professor'),
   (3, 'Aluno');
 
+-- Usuários
+
+INSERT INTO users (name, email, password) VALUES
+("Hanna Seraphim", "hanna@uni.com", "$2a$10$z.2U47YdOfemyXA8hXGFq.0jQvikIQTv4fUrEsZzfaGlBBDSQPAju"),
+("Carlos Mendes", "carlos@uni.com", "$2a$10$Q9j4hX9uV7kZCwQhYfFZQOeJkYp2t6QnYwZkYkYwZkYkYwZkYkYw"),
+("Fernanda Lima", "fernanda@uni.com", "$2a$10$A7h3kL9uP5mZCwQhYfFZQOeJkYp2t6QnYwZkYkYwZkYkYwZkYkYw"),
+("João Pereira", "joao@uni.com", "$2a$10$B8j5mN2vT6nZCwQhYfFZQOeJkYp2t6QnYwZkYkYwZkYkYwZkYkYw"),
+("Mariana Souza", "mariana@uni.com", "$2a$10$C9k6oP3wU7oZCwQhYfFZQOeJkYp2t6QnYwZkYkYwZkYkYwZkYkYw"),
+("Roberto Silva", "roberto@uni.com", "$2a$10$D0l7pQ4xV8pZCwQhYfFZQOeJkYp2t6QnYwZkYkYwZkYkYwZkYkYw");
+
+-- Associações
+INSERT INTO associated (id_user, id_profile) VALUES
+(1, 3),
+(1, 2),
+(1, 1),
+(2, 2),
+(3, 3),
+(4, 3),
+(5, 3),
+(6, 2);
+
 -- CURSOS
 INSERT INTO courses (id, name, description, max_students) VALUES
-  (1, 'Banco de Dados I',  'Introdução a bancos de dados relacionais.', 30),
-  (2, 'Programação Web',   'Fundamentos de desenvolvimento Web.',       30),
-  (3, 'Algoritmos',        'Lógica de programação e estruturas básicas.', 30);
-  
-INSERT INTO users (name, email, password) VALUES ("Hanna Seraphim", "hanna@uni.com", "$2a$10$z.2U47YdOfemyXA8hXGFq.0jQvikIQTv4fUrEsZzfaGlBBDSQPAju");
+(1, 'Banco de Dados I',  'Introdução a bancos de dados relacionais.', 30),
+(2, 'Programação Web',   'Fundamentos de desenvolvimento Web.',       30),
+(3, 'Algoritmos',        'Lógica de programação e estruturas básicas.', 30),
+(4, 'Engenharia de Software', 'Princípios de engenharia e boas práticas.', 40),
+(5, 'Redes de Computadores', 'Fundamentos de redes e protocolos.', 35);
 
-INSERT INTO associated (id_user, id_profile) VALUES (1, 3);
-INSERT INTO associated (id_user, id_profile) VALUES (1, 2);
-INSERT INTO associated (id_user, id_profile) VALUES (1, 1)
+
+-- TURMAS
+INSERT INTO classes (id_course, id_teacher, starts_on, ends_on, period, name, max_students, archived) VALUES
+(1, 2, '2025-02-01', '2025-06-30', 'Matutino', 'BDI - Turma A', 30, false),
+(2, 6, '2025-02-01', '2025-06-30', 'Noturno', 'Web - Turma B', 25, false),
+(3, 2, '2025-08-01', '2025-12-15', 'Vespertino', 'Algoritmos - Turma C', 30, false);
+  
+
+-- MATRÍCULAS
+INSERT INTO enrolment (id_student, id_class, enrolled_at, active) VALUES
+(3, 1, NOW(), true),
+(4, 1, NOW(), true),
+(5, 2, NOW(), true),
+(1, 3, NOW(), true);
+
+-- MATERIAIS DE ESTUDO
+INSERT INTO materials (id_class, title, description) VALUES
+(1, "Introdução ao SQL", "Slides sobre comandos básicos."),
+(1, "Modelo Relacional", "PDF com exemplos de tabelas."),
+(2, "HTML e CSS", "Apostila introdutória."),
+(3, "Estruturas de Controle", "Exercícios práticos.");
+
+-- ATIVIDADES
+INSERT INTO activities (id_class, title, description, type, max_grade, due_date) VALUES
+(1, "Lista de Exercícios 1", "Consultas SQL básicas.", "Exercício", 10.0, '2025-03-15'),
+(1, "Projeto Final", "Criação de banco de dados.", "Projeto", 20.0, '2025-06-20'),
+(2, "Site Estático", "Construção de página HTML.", "Projeto", 15.0, '2025-04-10'),
+(3, "Exercícios de Algoritmos", "Problemas de lógica.", "Exercício", 10.0, '2025-09-20');
+
+-- ENVIOS
+INSERT INTO submissions (id_student, id_activity, content) VALUES
+(3, 1, "Consultas SQL resolvidas."),
+(4, 1, "Resolução parcial."),
+(5, 3, "Página HTML com CSS."),
+(1, 4, "Resolução dos problemas de lógica.");
+
+-- NOTAS
+INSERT INTO grades (id_student, id_activity, grade) VALUES
+(3, 1, 9.0),
+(4, 1, 7.5),
+(5, 3, 14.0),
+(1, 4, 8.5);
+
+-- HISTÓRICO
+INSERT INTO history (id_student, id_class, final_grade, status) VALUES
+(3, 1, 8.5, "Aprovado"),
+(4, 1, 7.0, "Aprovado"),
+(5, 2, 14.0, "Aprovado"),
+(1, 3, 8.5, "Aprovado");
