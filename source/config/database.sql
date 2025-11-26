@@ -18,7 +18,7 @@ CREATE TABLE users (
     id    INT AUTO_INCREMENT PRIMARY KEY,
     name        VARCHAR(100) NOT NULL,
     email       VARCHAR(100) NOT NULL UNIQUE,
-    password    VARCHAR(100) NOT NULL
+    password    VARCHAR(512) NOT NULL
 );
 
 CREATE TABLE associated (
@@ -136,9 +136,9 @@ CREATE TABLE history (
 
 -- -- PERFIS DE USUÁRIO
 INSERT INTO user_profiles (id, name) VALUES
-  (1, 'ADMIN'),
-  (2, 'TEACHER'),
-  (3, 'STUDENT');
+  (1, 'Administrador'),
+  (2, 'Professor'),
+  (3, 'Aluno');
 
 -- CURSOS
 INSERT INTO courses (id, name, description, max_students) VALUES
@@ -146,3 +146,8 @@ INSERT INTO courses (id, name, description, max_students) VALUES
   (2, 'Programação Web',   'Fundamentos de desenvolvimento Web.',       30),
   (3, 'Algoritmos',        'Lógica de programação e estruturas básicas.', 30);
   
+INSERT INTO users (name, email, password) VALUES ("Hanna Seraphim", "hanna@uni.com", "$2a$10$z.2U47YdOfemyXA8hXGFq.0jQvikIQTv4fUrEsZzfaGlBBDSQPAju");
+
+INSERT INTO associated (id_user, id_profile) VALUES (1, 3);
+INSERT INTO associated (id_user, id_profile) VALUES (1, 2);
+INSERT INTO associated (id_user, id_profile) VALUES (1, 1)
