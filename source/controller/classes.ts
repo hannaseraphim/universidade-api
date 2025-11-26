@@ -253,11 +253,20 @@ export async function getClass(req: express.Request, res: express.Response) {
          co.name AS course_name,
          u.id AS teacher_id,
          u.name AS teacher_name,
-         u.email AS teacher_email
+         u.email AS teacher_email,
+         s.id AS student_id,
+         s.name AS student_name,
+         s.email AS student_email,
+         AVG(g.grade) AS average_grade
        FROM classes c
        INNER JOIN courses co ON c.id_course = co.id
        INNER JOIN users u ON c.id_teacher = u.id
-       WHERE c.id = ?`,
+       LEFT JOIN enrolment e ON c.id = e.id_class AND e.active = 1
+       LEFT JOIN users s ON e.id_student = s.id
+       LEFT JOIN grades g ON g.id_student = s.id
+       LEFT JOIN activities a ON g.id_activity = a.id AND a.id_class = c.id
+       WHERE c.id = ?
+       GROUP BY c.id, co.id, u.id, s.id`,
       [id]
     );
 
@@ -265,24 +274,35 @@ export async function getClass(req: express.Request, res: express.Response) {
       return res.status(404).json({ message: "Class not found" });
     }
 
-    const r = (rows as any[])[0];
+    const base = (rows as any[])[0];
     const classObj = {
-      id: r.class_id,
-      name: r.class_name,
-      starts_on: r.starts_on,
-      ends_on: r.ends_on,
-      period: r.period,
-      max_students: r.max_students,
-      archived: r.archived,
+      id: base.class_id,
+      name: base.class_name,
+      starts_on: base.starts_on,
+      ends_on: base.ends_on,
+      period: base.period,
+      max_students: base.max_students,
+      archived: base.archived,
       course: {
-        id: r.course_id,
-        name: r.course_name,
+        id: base.course_id,
+        name: base.course_name,
       },
       teacher: {
-        id: r.teacher_id,
-        name: r.teacher_name,
-        email: r.teacher_email,
+        id: base.teacher_id,
+        name: base.teacher_name,
+        email: base.teacher_email,
       },
+      students: (rows as any[])
+        .filter(r => r.student_id)
+        .map(r => ({
+          id: r.student_id,
+          name: r.student_name,
+          email: r.student_email,
+          average_grade: r.average_grade ? Number(r.average_grade).toFixed(2) : null,
+          status: r.average_grade !== null
+            ? (r.average_grade >= 5 ? "Aprovado" : "Reprovado")
+            : "Sem notas"
+        }))
     };
 
     return res.status(200).json(classObj);
@@ -291,3 +311,4 @@ export async function getClass(req: express.Request, res: express.Response) {
     return res.status(500).json({ message: "Internal server error" });
   }
 }
+
