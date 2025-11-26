@@ -1,9 +1,5 @@
-import { Classes, Courses } from "../modules/index.js";
 import connection from "../config/database.js";
 import express from "express";
-
-const classes = new Classes(connection);
-const courses = new Courses(connection);
 
 // Creates a new class
 export async function createClass(req: express.Request, res: express.Response) {
@@ -31,47 +27,102 @@ export async function createClass(req: express.Request, res: express.Response) {
     return res.status(400).json({ message: "Missing fields" });
   }
 
-  const validFields = await classes.validateFields(req.body);
-  if (!validFields) {
-    return res.status(400).json({ message: "Fields not valid" });
-  }
-
-  const courseExists = await courses.getSpecificByCondition({ id: id_course });
-  if (!courseExists) {
-    return res.status(400).json({ message: "Course not found" });
-  }
-
-  const isTeacher = await classes.isTeacher(id_teacher);
-
-  if (!isTeacher) {
-    return res.status(400).json({ message: "No teachers found" });
-  }
-
-  const classExists = await classes.getSpecificByCondition({
-    id_course: id_course,
-    id_teacher: id_teacher,
-  });
-
-  if (classExists) {
-    return res.status(409).json({ message: "Class already exists" });
-  }
-
   try {
-    const row = await classes.create(req.body);
+    // Verifica se o curso existe
+    const [courseRows] = await connection.execute(
+      "SELECT id FROM courses WHERE id = ?",
+      [id_course]
+    );
+    if ((courseRows as any[]).length === 0) {
+      return res.status(400).json({ message: "Course not found" });
+    }
+
+    // Verifica se o professor existe
+    const [teacherRows] = await connection.execute(
+      "SELECT id FROM users WHERE id = ?",
+      [id_teacher]
+    );
+    if ((teacherRows as any[]).length === 0) {
+      return res.status(400).json({ message: "No teachers found" });
+    }
+
+    // Verifica se já existe turma com esse curso/professor
+    const [classRows] = await connection.execute(
+      "SELECT id FROM classes WHERE id_course = ? AND id_teacher = ?",
+      [id_course, id_teacher]
+    );
+    if ((classRows as any[]).length > 0) {
+      return res.status(409).json({ message: "Class already exists" });
+    }
+
+    // Cria a turma
+    await connection.execute(
+      `INSERT INTO classes 
+        (id_course, id_teacher, starts_on, ends_on, period, name, max_students, archived) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        id_course,
+        id_teacher,
+        starts_on,
+        ends_on,
+        period,
+        name,
+        max_students,
+        archived,
+      ]
+    );
+
     return res.status(200).json({ message: "Class created successfully" });
   } catch (error) {
-    console.log(error);
+    console.error(error);
     return res.status(500).json({ message: "Internal server error" });
   }
 }
 
-// Lists all created classes
+// Lists all created classes with enrolled students
 export async function listClasses(req: express.Request, res: express.Response) {
   try {
-    const [rows] = await classes.getAll();
-    return res.status(200).json(rows);
+    const [rows] = await connection.execute(
+      `SELECT 
+         c.id AS class_id,
+         c.name AS class_name,
+         c.starts_on,
+         c.ends_on,
+         c.period,
+         c.max_students,
+         c.archived,
+         co.id AS course_id,
+         co.name AS course_name,
+         u.id AS teacher_id,
+         u.name AS teacher_name,
+         u.email AS teacher_email
+       FROM classes c
+       INNER JOIN courses co ON c.id_course = co.id
+       INNER JOIN users u ON c.id_teacher = u.id`
+    );
+
+    const result = (rows as any[]).map((r) => ({
+      id: r.class_id,
+      name: r.class_name,
+      starts_on: r.starts_on,
+      ends_on: r.ends_on,
+      period: r.period,
+      max_students: r.max_students,
+      archived: r.archived,
+      course: {
+        id: r.course_id,
+        name: r.course_name,
+      },
+      teacher: {
+        id: r.teacher_id,
+        name: r.teacher_name,
+        email: r.teacher_email,
+      },
+    }));
+
+    return res.status(200).json(result);
   } catch (error) {
-    console.log(error);
+    console.error(error);
     return res.status(500).json({ message: "Internal server error" });
   }
 }
@@ -79,70 +130,164 @@ export async function listClasses(req: express.Request, res: express.Response) {
 // Updates a class by id
 export async function updateClass(req: express.Request, res: express.Response) {
   const { id } = req.params;
-  const { id_course, id_teacher } = req.body;
+  const {
+    id_course,
+    id_teacher,
+    starts_on,
+    ends_on,
+    period,
+    name,
+    max_students,
+    archived,
+  } = req.body;
 
-  const exists = await classes.getSpecificByCondition({ id });
-  if (!exists) {
-    return res.sendStatus(404);
+  try {
+    // Verifica se a turma existe
+    const [rows] = await connection.execute(
+      "SELECT id FROM classes WHERE id = ?",
+      [id]
+    );
+    if ((rows as any[]).length === 0) {
+      return res.sendStatus(404);
+    }
+
+    // Verifica se o curso existe
+    const [courseRows] = await connection.execute(
+      "SELECT id FROM courses WHERE id = ?",
+      [id_course]
+    );
+    if ((courseRows as any[]).length === 0) {
+      return res.sendStatus(400);
+    }
+
+    // Verifica se o professor existe
+    const [teacherRows] = await connection.execute(
+      "SELECT id FROM users WHERE id = ?",
+      [id_teacher]
+    );
+    if ((teacherRows as any[]).length === 0) {
+      return res.sendStatus(400);
+    }
+
+    // Verifica se já existe turma com esse curso/professor
+    const [classRows] = await connection.execute(
+      "SELECT id FROM classes WHERE id_course = ? AND id_teacher = ? AND id <> ?",
+      [id_course, id_teacher, id]
+    );
+    if ((classRows as any[]).length > 0) {
+      return res.sendStatus(409);
+    }
+
+    // Atualiza turma
+    await connection.execute(
+      `UPDATE classes 
+       SET id_course=?, id_teacher=?, starts_on=?, ends_on=?, period=?, name=?, max_students=?, archived=? 
+       WHERE id=?`,
+      [
+        id_course,
+        id_teacher,
+        starts_on,
+        ends_on,
+        period,
+        name,
+        max_students,
+        archived,
+        id,
+      ]
+    );
+
+    return res.sendStatus(200);
+  } catch (error) {
+    console.error(error);
+    return res.sendStatus(500);
   }
-
-  const courseExists = await courses.getSpecificByCondition({ id: id_course });
-  if (!courseExists) {
-    return res.sendStatus(400);
-  }
-
-  const isTeacher = await classes.isTeacher(id_teacher);
-
-  if (!isTeacher) {
-    return res.sendStatus(400);
-  }
-
-  const classExists = await classes.getSpecificByCondition({
-    id_course: id_course,
-    id_teacher: id_teacher,
-  });
-
-  if (classExists && classExists.id !== Number(id)) {
-    return res.sendStatus(409);
-  }
-
-  const validFields = await classes.validateFields(req.body);
-  if (!validFields) {
-    return res.sendStatus(400);
-  }
-
-  const result = await classes.update(id!, req.body, "id");
-  return res.sendStatus(result ? 200 : 400);
 }
 
 // Deletes a class by id
 export async function deleteClass(req: express.Request, res: express.Response) {
   const { id } = req.params;
 
-  const exists = await classes.getSpecificByCondition({ id: id });
-
-  if (!exists) {
-    return res.status(404).json({ message: "Class not found" });
-  }
-
-  const result = await classes.delete(id!, "id");
-  return res
-    .status(result ? 200 : 400)
-    .json(
-      result
-        ? { message: "Class deleted successfully" }
-        : { message: "Class could not be deleted" }
+  try {
+    const [rows] = await connection.execute(
+      "SELECT id FROM classes WHERE id = ?",
+      [id]
     );
+    if ((rows as any[]).length === 0) {
+      return res.status(404).json({ message: "Class not found" });
+    }
+
+    const [result] = await connection.execute(
+      "DELETE FROM classes WHERE id = ?",
+      [id]
+    );
+    const deleteResult = result as any;
+
+    return res
+      .status(deleteResult.affectedRows > 0 ? 200 : 400)
+      .json(
+        deleteResult.affectedRows > 0
+          ? { message: "Class deleted successfully" }
+          : { message: "Class could not be deleted" }
+      );
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
 }
 
-// Fetchs a class by id
+// Fetches a class by id with enrolled students
 export async function getClass(req: express.Request, res: express.Response) {
   const { id } = req.params;
-  const result = await classes.getSpecificByCondition({ id: id });
 
-  if (!result) {
-    return res.status(404).json({ message: "Class not found" });
+  try {
+    const [rows] = await connection.execute(
+      `SELECT 
+         c.id AS class_id,
+         c.name AS class_name,
+         c.starts_on,
+         c.ends_on,
+         c.period,
+         c.max_students,
+         c.archived,
+         co.id AS course_id,
+         co.name AS course_name,
+         u.id AS teacher_id,
+         u.name AS teacher_name,
+         u.email AS teacher_email
+       FROM classes c
+       INNER JOIN courses co ON c.id_course = co.id
+       INNER JOIN users u ON c.id_teacher = u.id
+       WHERE c.id = ?`,
+      [id]
+    );
+
+    if ((rows as any[]).length === 0) {
+      return res.status(404).json({ message: "Class not found" });
+    }
+
+    const r = (rows as any[])[0];
+    const classObj = {
+      id: r.class_id,
+      name: r.class_name,
+      starts_on: r.starts_on,
+      ends_on: r.ends_on,
+      period: r.period,
+      max_students: r.max_students,
+      archived: r.archived,
+      course: {
+        id: r.course_id,
+        name: r.course_name,
+      },
+      teacher: {
+        id: r.teacher_id,
+        name: r.teacher_name,
+        email: r.teacher_email,
+      },
+    };
+
+    return res.status(200).json(classObj);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error" });
   }
-
-  return res.status(200).send(result);
 }

@@ -1,11 +1,6 @@
-import { Enrolment, Users, Classes } from "../modules/index.js";
 import connection from "../config/database.js";
 import express from "express";
 import { io } from "../index.js";
-
-const enrolment = new Enrolment(connection);
-const classes = new Classes(connection);
-const users = new Users(connection);
 
 // Creates a new enrolment
 export async function createEnrolment(
@@ -14,165 +9,233 @@ export async function createEnrolment(
 ) {
   const { id_student, id_class, enrolled_at, active } = req.body;
 
-  if (!id_student || !id_class || !enrolled_at || !active)
+  if (!id_student || !id_class || !enrolled_at || active === undefined) {
     return res.status(400).json({ message: "Missing fields" });
-
-  // Verifies if the providen id is a student
-  const isStudent = await users.isStudent(id_student);
-  if (!isStudent) return res.status(400).json({ message: "Student not found" });
-
-  // Verifies if the fields are valid
-  const validFields = await enrolment.validateFields(req.body);
-  if (!validFields) res.status(400).json({ message: "Fields not valid" });
-
-  // Verifies if the student is his own teacher
-  const row = await classes.getOneByCondition({ id: id_class });
-  if (row.id_teacher == id_student)
-    return res.status(400).json({ message: "Cannot enrol on own class" });
-
-  // Verifies class max_students
-  const studentQuantity = await enrolment.countByCondition({
-    id_class: id_class,
-  });
-  if (studentQuantity.total > row.max_students) {
-    const roomName = `teacher-${row.id_teacher}`;
-    io.to(roomName).emit("class:full", {
-      id_class: row.id,
-      teacherId: row.id_teacher,
-      id_student: id_student,
-      message:
-        "A matrícula de um aluno foi recusada por falta de vagas. Avalie aumentar o limite da turma.",
-      timestamp: new Date().toISOString(),
-    });
-    return res
-      .status(400)
-      .json({ message: "Max students reached. Teacher notified" });
   }
 
-  // Verifies if the enrolment already exists before creating
-  const exists = await enrolment.getOneByCondition({
-    id_student: id_student,
-    id_class: id_class,
-  });
-  if (exists)
-    return res.status(409).json({ message: "Enrolment already exists" });
-
   try {
-    await enrolment.create(req.body);
+    // 1. Verifica se o usuário é aluno
+    const [studentRows] = await connection.execute(
+      `SELECT u.id 
+       FROM users u
+       INNER JOIN associated a ON u.id = a.id_user
+       INNER JOIN user_profiles p ON a.id_profile = p.id
+       WHERE u.id = ? AND p.name = 'Aluno'`,
+      [id_student]
+    );
+    if ((studentRows as any[]).length === 0) {
+      return res.status(400).json({ message: "Student not found" });
+    }
+
+    // 2. Verifica se a turma existe
+    const [classRows] = await connection.execute(
+      "SELECT * FROM classes WHERE id = ?",
+      [id_class]
+    );
+    if ((classRows as any[]).length === 0) {
+      return res.status(400).json({ message: "Class not found" });
+    }
+    const classData = (classRows as any[])[0];
+
+    // 3. Verifica se o aluno não é o professor da turma
+    if (classData.id_teacher === id_student) {
+      return res.status(400).json({ message: "Cannot enrol on own class" });
+    }
+
+    // 4. Verifica quantidade de alunos já matriculados
+    const [countRows] = await connection.execute(
+      "SELECT COUNT(*) AS total FROM enrolment WHERE id_class = ? AND active = 1",
+      [id_class]
+    );
+    const total = (countRows as any[])[0].total;
+    if (total >= (classData.max_students ?? classData.max_students)) {
+      const roomName = `teacher-${classData.id_teacher}`;
+      io.to(roomName).emit("class:full", {
+        id_class: classData.id,
+        teacherId: classData.id_teacher,
+        id_student,
+        message:
+          "A matrícula de um aluno foi recusada por falta de vagas. Avalie aumentar o limite da turma.",
+        timestamp: new Date().toISOString(),
+      });
+      return res
+        .status(400)
+        .json({ message: "Max students reached. Teacher notified" });
+    }
+
+    // 5. Verifica se já existe matrícula
+    const [existsRows] = await connection.execute(
+      "SELECT * FROM enrolment WHERE id_student = ? AND id_class = ?",
+      [id_student, id_class]
+    );
+    if ((existsRows as any[]).length > 0) {
+      return res.status(409).json({ message: "Enrolment already exists" });
+    }
+
+    // 6. Cria matrícula
+    await connection.execute(
+      `INSERT INTO enrolment (id_student, id_class, enrolled_at, active) 
+       VALUES (?, ?, ?, ?)`,
+      [id_student, id_class, enrolled_at, active]
+    );
+
     return res.status(200).json({ message: "Enrolment created successfully" });
   } catch (error) {
-    console.log(error);
+    console.error(error);
     return res.status(500).json({ message: "Internal server error" });
   }
 }
 
-// Lists all created enrolments by class id
+// Lists all enrolments by class id (with student info)
 export async function listEnrolmentsByClassId(
   req: express.Request,
   res: express.Response
 ) {
   const { id } = req.params;
 
-  // Verifies if the enrolments by the class id exists
-  const exists = await enrolment.getSpecificByCondition({
-    id_class: id,
-  });
-  if (!exists) return res.status(404).json({ message: "Enrolments not found" });
-
   try {
-    const rows = await enrolment.getSpecificByCondition({
-      id_class: id,
-      active: 1,
-    });
-    console.log(rows);
+    const [rows] = await connection.execute(
+      `SELECT 
+         e.id_student,
+         e.id_class,
+         e.enrolled_at,
+         e.active,
+         u.name AS student_name,
+         u.email AS student_email
+       FROM enrolment e
+       INNER JOIN users u ON e.id_student = u.id
+       WHERE e.id_class = ? AND e.active = 1`,
+      [id]
+    );
+
+    if ((rows as any[]).length === 0) {
+      return res.status(404).json({ message: "No enrolments found" });
+    }
 
     return res.status(200).json(rows);
   } catch (error) {
-    console.log(error);
+    console.error(error);
     return res.status(500).json({ message: "Internal server error" });
   }
 }
 
-// Lists all created enrolments by student id
+// Lists all enrolments by student id (with class info)
 export async function listEnrolmentsByStudentId(
   req: express.Request,
   res: express.Response
 ) {
   const { id } = req.params;
 
-  // Verifies if the student exists
-  const exists = await enrolment.getOneByCondition({
-    id_student: id,
-  });
-  console.log(exists);
-  if (!exists) return res.status(404).json({ message: "Enrolments not found" });
-
   try {
-    const [rows] = await enrolment.getSpecificByCondition({
-      id_student: Number(id),
-    });
+    const [rows] = await connection.execute(
+      `SELECT 
+         e.id_student,
+         e.id_class,
+         e.enrolled_at,
+         e.active,
+         c.name AS class_name,
+         c.starts_on,
+         c.ends_on,
+         c.period,
+         co.name AS course_name
+       FROM enrolment e
+       INNER JOIN classes c ON e.id_class = c.id
+       INNER JOIN courses co ON c.id_course = co.id
+       WHERE e.id_student = ?`,
+      [id]
+    );
+
+    if ((rows as any[]).length === 0) {
+      return res.status(404).json({ message: "No enrolments found" });
+    }
+
     return res.status(200).json(rows);
   } catch (error) {
-    console.log(error);
+    console.error(error);
     return res.status(500).json({ message: "Internal server error" });
   }
 }
 
-// Updates a enrolment by student id and class id
+// Updates enrolment by student id and class id
 export async function updateEnrolmentByStudentAndClassId(
   req: express.Request,
   res: express.Response
 ) {
-  const { id } = req.params;
+  const { id } = req.params; // id_student
   const { id_class, active } = req.body;
 
-  if (!id_class && !active) return res.sendStatus(400);
+  if (!id_class || active === undefined) {
+    return res.sendStatus(400);
+  }
 
-  const validFields = await enrolment.validateFields(req.body);
-  if (!validFields) return res.sendStatus(400);
-
-  const exists = await enrolment.getOneByCondition({
-    id_student: id,
-    id_class: id_class,
-  });
-  if (!exists) return res.sendStatus(404);
-
-  const result = await enrolment.update(id!, req.body, "id_student");
-  return res
-    .status(result ? 200 : 400)
-    .json(
-      result
-        ? { message: "Enrolment updated successfully" }
-        : { message: "Enrolment could not be updated" }
+  try {
+    // Verifica se existe matrícula
+    const [rows] = await connection.execute(
+      "SELECT * FROM enrolment WHERE id_student = ? AND id_class = ?",
+      [id, id_class]
     );
+    if ((rows as any[]).length === 0) {
+      return res.sendStatus(404);
+    }
+
+    // Atualiza matrícula
+    const [result] = await connection.execute(
+      "UPDATE enrolment SET active = ? WHERE id_student = ? AND id_class = ?",
+      [active, id, id_class]
+    );
+
+    const updateResult = result as any;
+    return res
+      .status(updateResult.affectedRows > 0 ? 200 : 400)
+      .json(
+        updateResult.affectedRows > 0
+          ? { message: "Enrolment updated successfully" }
+          : { message: "Enrolment could not be updated" }
+      );
+  } catch (error) {
+    console.error(error);
+    return res.sendStatus(500);
+  }
 }
 
-// Deletes a enrolment by student id and class id
+// Delete an enrolment by student and class id
 export async function deleteEnrolmentByStudentAndClassId(
   req: express.Request,
   res: express.Response
 ) {
-  const { id } = req.params;
+  const { id } = req.params; // id_student
   const { id_class } = req.body;
 
-  if (!id_class) return res.sendStatus(400);
+  if (!id_class) {
+    return res.sendStatus(400);
+  }
 
-  const validFields = await enrolment.validateFields(req.body);
-  if (!validFields) return res.sendStatus(400);
-
-  const exists = await enrolment.getOneByCondition({
-    id_student: id,
-    id_class: id_class,
-  });
-
-  if (!exists) return res.sendStatus(404);
-
-  const result = await enrolment.delete(id!, "id_student");
-  return res
-    .status(result ? 200 : 400)
-    .json(
-      result
-        ? { message: "Enrolment deleted successfully" }
-        : { message: "Enrolment could not be deleted" }
+  try {
+    // Verifica se existe matrícula
+    const [rows] = await connection.execute(
+      "SELECT * FROM enrolment WHERE id_student = ? AND id_class = ?",
+      [id, id_class]
     );
+    if ((rows as any[]).length === 0) {
+      return res.sendStatus(404);
+    }
+
+    // Deleta matrícula
+    const [result] = await connection.execute(
+      "DELETE FROM enrolment WHERE id_student = ? AND id_class = ?",
+      [id, id_class]
+    );
+
+    const deleteResult = result as any;
+    return res
+      .status(deleteResult.affectedRows > 0 ? 200 : 400)
+      .json(
+        deleteResult.affectedRows > 0
+          ? { message: "Enrolment deleted successfully" }
+          : { message: "Enrolment could not be deleted" }
+      );
+  } catch (error) {
+    console.error(error);
+    return res.sendStatus(500);
+  }
 }
