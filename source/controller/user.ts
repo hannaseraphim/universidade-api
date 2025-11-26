@@ -204,11 +204,16 @@ export async function updateUser(req: express.Request, res: express.Response) {
     if (data.password) {
       const hashedPassword = await bcrypt.hash(data.password, env.saltRounds);
       data.password = hashedPassword;
+
+      await connection.execute(
+        "UPDATE users SET name = ?, email = ?, password = ? WHERE id = ?",
+        [data.name, data.email, hashedPassword, id]
+      );
     }
 
     await connection.execute(
-      "UPDATE users SET name = ?, email = ?, password = ? WHERE id = ?",
-      [data.name, data.email, data.password, id]
+      "UPDATE users SET name = ?, email = ? WHERE id = ?",
+      [data.name, data.email, id]
     );
 
     if (data.profiles && Array.isArray(data.profiles)) {
