@@ -128,11 +128,17 @@ export async function createUser(req: express.Request, res: express.Response) {
   try {
     const hashedPassword = await bcrypt.hash(password, env.saltRounds);
 
-    const exists = await connection.execute(
+    console.log(email);
+    const row = await connection.execute(
       "SELECT email FROM users WHERE email = ?",
       [email]
     );
-    if (exists) return res.status(409).json({ message: "User already exists" });
+
+    const exists = row as any;
+
+    console.log(exists[0]);
+    if (exists[0].length > 0)
+      return res.status(409).json({ message: "User already exists" });
 
     const [result] = await connection.execute(
       "INSERT INTO users (email, name, password) VALUES (?, ?, ?)",
