@@ -128,7 +128,6 @@ export async function createUser(req: express.Request, res: express.Response) {
   try {
     const hashedPassword = await bcrypt.hash(password, env.saltRounds);
 
-    console.log(email);
     const row = await connection.execute(
       "SELECT email FROM users WHERE email = ?",
       [email]
@@ -136,7 +135,6 @@ export async function createUser(req: express.Request, res: express.Response) {
 
     const exists = row as any;
 
-    console.log(exists[0]);
     if (exists[0].length > 0)
       return res.status(409).json({ message: "User already exists" });
 
