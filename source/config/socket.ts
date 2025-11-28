@@ -12,7 +12,6 @@ export function setupSocket(server: any) {
     socket.on("teacher:join", (teacherId: number, name: string) => {
       const roomName = `teacher-${teacherId}`;
       socket.join(roomName);
-      console.log(`Professor ${name} entrou na sala ${roomName}`);
     });
   });
 
