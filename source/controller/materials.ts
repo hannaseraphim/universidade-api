@@ -51,7 +51,7 @@ export async function listMaterials(
 ) {
   try {
     const [rows] = await connection.execute(
-      `SELECT m.id, m.title, m.description, c.name AS class_name, co.name AS course_name
+      `SELECT m.id, m.title, m.description, m.posted_at, c.name AS class_name, co.name AS course_name
        FROM materials m
        INNER JOIN classes c ON m.id_class = c.id
        INNER JOIN courses co ON c.id_course = co.id`
