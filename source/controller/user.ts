@@ -293,3 +293,36 @@ export async function getTopTeacher(
     return res.status(500).json({ message: "Internal server error" });
   }
 }
+
+// Get the student with most approved courses
+export async function getTopStudent(
+  req: express.Request,
+  res: express.Response
+) {
+  try {
+    const [rows] = await connection.execute(
+      `SELECT 
+         u.id AS user_id,
+         u.name AS user_name,
+         u.email,
+         COUNT(h.id_class) AS approved_courses
+       FROM users u
+       INNER JOIN history h ON u.id = h.id_student
+       WHERE h.status = 'Aprovado'
+       GROUP BY u.id, u.name, u.email
+       ORDER BY approved_courses DESC
+       LIMIT 1`
+    );
+
+    console.log(rows);
+
+    if ((rows as any[]).length === 0) {
+      return res.status(404).json({ message: "No approved courses found" });
+    }
+
+    return res.status(200).json((rows as any)[0]);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+}
