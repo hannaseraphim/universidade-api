@@ -63,13 +63,20 @@ export async function createEnrolment(
         .json({ message: "Max students reached. Teacher notified" });
     }
 
-    // 5. Verifica se já existe matrícula
+    // 5. Verifica se já existe matrícula ativa ou aprovada
     const [existsRows] = await connection.execute(
-      "SELECT * FROM enrolment WHERE id_student = ? AND id_class = ?",
+      `SELECT * 
+   FROM enrolment 
+   WHERE id_student = ? 
+     AND id_class = ? 
+     AND status != 'failed'`,
       [id_student, id_class]
     );
+
     if ((existsRows as any[]).length > 0) {
-      return res.status(409).json({ message: "Enrolment already exists" });
+      return res
+        .status(409)
+        .json({ message: "Enrolment already exists and not failed" });
     }
 
     // 🔎 5.1 Verifica se o aluno já foi reprovado nesse curso
