@@ -62,6 +62,7 @@ CREATE TABLE enrolment (
   id_class    INT NOT NULL,
   enrolled_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   active      BOOLEAN NOT NULL DEFAULT true,
+  status      ENUM("passed", "failed", "enrolled") DEFAULT ("enrolled"),
 
   PRIMARY KEY(id_student, id_class),
   FOREIGN KEY(id_student) REFERENCES users(id) ON DELETE CASCADE,
@@ -178,11 +179,11 @@ INSERT INTO classes (id_course, id_teacher, starts_on, ends_on, period, name, ma
   
 
 -- MATRÍCULAS
-INSERT INTO enrolment (id_student, id_class, enrolled_at, active) VALUES
-(3, 1, NOW(), true),
-(4, 1, NOW(), true),
-(5, 2, NOW(), true),
-(1, 3, NOW(), true);
+INSERT INTO enrolment (id_student, id_class, enrolled_at, active, status) VALUES
+(3, 1, NOW(), true, "failed"),
+(4, 1, NOW(), true, "enrolled"),
+(5, 2, NOW(), true, "passed"),
+(1, 3, NOW(), true, "passed");
 
 -- MATERIAIS DE ESTUDO
 INSERT INTO materials (id_class, title, description) VALUES
