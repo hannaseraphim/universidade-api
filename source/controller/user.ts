@@ -54,31 +54,36 @@ export async function getUser(req: express.Request, res: express.Response) {
   try {
     const [rows] = await connection.execute(
       `SELECT 
-         u.id AS user_id,
-         u.name AS user_name,
-         u.email,
-         GROUP_CONCAT(DISTINCT CONCAT(p.id, ':', p.name)) AS profiles,
-         c.id AS class_id,
-         c.name AS class_name,
-         co.name AS course_name,
-         g.id_activity,
-         a.title AS activity_title,
-         g.grade,
-         h.final_grade,
-         h.status
-       FROM users u
-       INNER JOIN associated a1 ON u.id = a1.id_user
-       INNER JOIN user_profiles p ON a1.id_profile = p.id
-       LEFT JOIN enrolment e ON u.id = e.id_student
-       LEFT JOIN classes c ON e.id_class = c.id
-       LEFT JOIN courses co ON c.id_course = co.id
-       LEFT JOIN grades g ON u.id = g.id_student
-       LEFT JOIN activities a ON g.id_activity = a.id
-       LEFT JOIN history h ON u.id = h.id_student
-       WHERE u.id = ?
-       GROUP BY 
-         u.id, u.name, u.email, c.id, c.name, co.name,
-         g.id_activity, a.title, g.grade, h.final_grade, h.status`,
+  u.id AS user_id,
+  u.name AS user_name,
+  u.email,
+  GROUP_CONCAT(DISTINCT CONCAT(p.id, ':', p.name)) AS profiles,
+  c.id AS class_id,
+  c.name AS class_name,
+  co.name AS course_name,
+  CASE 
+    WHEN c.id_teacher = u.id THEN 'Professor'
+    WHEN e.id_student = u.id THEN 'Aluno'
+    ELSE NULL
+  END AS connection_type,
+  g.id_activity,
+  a.title AS activity_title,
+  g.grade,
+  h.final_grade,
+  h.status
+FROM users u
+INNER JOIN associated a1 ON u.id = a1.id_user
+INNER JOIN user_profiles p ON a1.id_profile = p.id
+LEFT JOIN enrolment e ON u.id = e.id_student
+LEFT JOIN classes c ON (e.id_class = c.id OR c.id_teacher = u.id)
+LEFT JOIN courses co ON c.id_course = co.id
+LEFT JOIN grades g ON u.id = g.id_student
+LEFT JOIN activities a ON g.id_activity = a.id
+LEFT JOIN history h ON u.id = h.id_student
+WHERE u.id = ?
+GROUP BY 
+  u.id, u.name, u.email, c.id, c.name, co.name, connection_type,
+  g.id_activity, a.title, g.grade, h.final_grade, h.status;`,
       [id]
     );
 
@@ -103,6 +108,7 @@ export async function getUser(req: express.Request, res: express.Response) {
           id: r.class_id,
           name: r.class_name,
           course_name: r.course_name,
+          connection_type: r.connection_type,
         })),
       grades: (rows as any[])
         .filter((r) => r.id_activity)
