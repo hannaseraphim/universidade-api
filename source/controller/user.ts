@@ -207,6 +207,7 @@ export async function deleteUser(req: express.Request, res: express.Response) {
   }
 }
 
+// Updates a user by id
 export async function updateUser(req: express.Request, res: express.Response) {
   const { id } = req.params;
   const data = req.body;
@@ -257,6 +258,7 @@ export async function updateUser(req: express.Request, res: express.Response) {
   }
 }
 
+// Fetch the teacher with most active classes
 export async function getTopTeacher(
   req: express.Request,
   res: express.Response
