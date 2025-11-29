@@ -78,7 +78,7 @@ export async function createEnrolment(
         .status(409)
         .json({ message: "Enrolment already exists and not failed" });
     }
-
+ 
     // 🔎 5.1 Verifica se o aluno já foi reprovado nesse curso
     const [priorityRows] = await connection.execute(
       `SELECT e.id_student
@@ -90,6 +90,14 @@ export async function createEnrolment(
       [id_student, id_class]
     );
     const priority = (priorityRows as any[]).length > 0;
+
+    // 🔁 5.2 Deleta a matrícula
+    if (priority) {
+      const [deleteRows] = await connection.execute(
+        "DELETE FROM enrolment WHERE id_student = ? AND id_class = ? AND status = 'failed'",
+        [id_student, id_class]
+      );
+    }
 
     // 6. Cria matrícula
     await connection.execute(
