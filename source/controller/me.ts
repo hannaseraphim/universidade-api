@@ -77,7 +77,6 @@ export async function showLogged(req: express.Request, res: express.Response) {
     const [rows] = await connection.execute<any[]>(query, [id]);
 
     if (rows.length === 0) {
-      await connection.end();
       return null;
     }
 
