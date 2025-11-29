@@ -72,6 +72,18 @@ export async function createEnrolment(
       return res.status(409).json({ message: "Enrolment already exists" });
     }
 
+    // 🔎 5.1 Verifica se o aluno já foi reprovado nesse curso
+    const [priorityRows] = await connection.execute(
+      `SELECT e.id_student
+       FROM enrolment e
+       INNER JOIN classes c ON e.id_class = c.id
+       WHERE e.id_student = ? 
+         AND c.id_course = (SELECT id_course FROM classes WHERE id = ?)
+         AND e.status = 'failed'`,
+      [id_student, id_class]
+    );
+    const priority = (priorityRows as any[]).length > 0;
+
     // 6. Cria matrícula
     await connection.execute(
       `INSERT INTO enrolment (id_student, id_class, enrolled_at, active) 
@@ -79,7 +91,11 @@ export async function createEnrolment(
       [id_student, id_class, enrolled_at, active]
     );
 
-    return res.status(200).json({ message: "Enrolment created successfully" });
+    // Retorna prioridade
+    return res.status(200).json({
+      message: "Enrolment created successfully",
+      priority: priority,
+    });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Internal server error" });
