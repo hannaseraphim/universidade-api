@@ -7,15 +7,18 @@ import bcrypt from "bcrypt";
 export async function listUsers(req: express.Request, res: express.Response) {
   try {
     const query = `
-      SELECT 
-        u.id AS user_id,
-        u.name AS user_name,
-        u.email,
-        GROUP_CONCAT(DISTINCT CONCAT(p.id, ':', p.name)) AS profiles
-      FROM users u
-      INNER JOIN associated a ON u.id = a.id_user
-      INNER JOIN user_profiles p ON a.id_profile = p.id
-      GROUP BY u.id, u.name, u.email
+          SELECT 
+      u.id AS user_id,
+      u.name AS user_name,
+      u.email,
+      GROUP_CONCAT(DISTINCT CONCAT(p.id, ':', p.name)) AS profiles,
+      GROUP_CONCAT(DISTINCT CONCAT(c.id, ':', c.name)) AS enrolments
+    FROM users u
+    INNER JOIN associated a ON u.id = a.id_user
+    INNER JOIN user_profiles p ON a.id_profile = p.id
+    LEFT JOIN enrolment e ON e.id_student = u.id
+    LEFT JOIN classes c ON e.id_class = c.id
+    GROUP BY u.id, u.name, u.email;
     `;
     const [rows] = await connection.execute(query);
 
@@ -27,6 +30,12 @@ export async function listUsers(req: express.Request, res: express.Response) {
         ? row.profiles.split(",").map((p: string) => {
             const [id, name] = p.split(":");
             return { id: Number(id), name };
+          })
+        : [],
+      enrolments: row.enrolments
+        ? row.enrolments.split(",").map((p: string) => {
+            const [id, name] = p.split(":");
+            return { id_class: Number(id), class_name: name };
           })
         : [],
     }));
