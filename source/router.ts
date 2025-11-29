@@ -7,6 +7,7 @@ import activities from "./router/activities.js";
 import grades from "./router/grades.js";
 import enrolment from "./router/enrolment.js";
 import submissions from "./router/submissions.js";
+import history from "./router/history.js";
 import { Router } from "express";
 import { restricted } from "./middleware/authentication.js";
 
@@ -20,6 +21,7 @@ router.use("/activities", restricted("Professor"), activities);
 router.use("/grades", restricted("Professor"), grades);
 router.use("/enrolments", restricted("Professor"), enrolment);
 router.use("/submissions", restricted("Professor"), submissions);
+router.use("/history", restricted("Aluno"), history);
 router.use("/me", me);
 
 export default router;
