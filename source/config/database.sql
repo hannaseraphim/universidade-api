@@ -219,3 +219,11 @@ INSERT INTO history (id_student, id_class, final_grade, status) VALUES
 (4, 1, 7.0, "Aprovado"),
 (5, 2, 14.0, "Aprovado"),
 (1, 3, 8.5, "Aprovado");
+
+-- Arquivar turmas caso elas passem do tempo de término a cada 7 dias
+CREATE EVENT archive_classes
+ON SCHEDULE EVERY 7 DAY
+DO
+  UPDATE classes
+  SET archived = TRUE
+  WHERE ends_on < CURDATE();
