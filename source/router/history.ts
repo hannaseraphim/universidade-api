@@ -4,6 +4,6 @@ import { getUserHistory } from "../controller/history.js";
 const router = Router();
 
 // /history Routes
-router.get("/:id", getUserHistory);
+router.get("/", getUserHistory);
 
 export default router;

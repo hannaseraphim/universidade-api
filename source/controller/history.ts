@@ -5,7 +5,7 @@ export const getUserHistory = async (
   req: express.Request,
   res: express.Response
 ) => {
-  const { id } = req.params;
+  const id = req.user?.id;
 
   try {
     const [rows] = await connection.execute(
