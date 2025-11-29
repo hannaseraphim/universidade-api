@@ -162,9 +162,9 @@ export async function updateEnrolmentByStudentAndClassId(
   res: express.Response
 ) {
   const { id } = req.params; // id_student
-  const { id_class, active } = req.body;
+  const { id_class, active, status } = req.body;
 
-  if (!id_class || active === undefined) {
+  if (!id_class || active === undefined || status === undefined) {
     return res.sendStatus(400);
   }
 
@@ -180,8 +180,8 @@ export async function updateEnrolmentByStudentAndClassId(
 
     // Atualiza matrícula
     const [result] = await connection.execute(
-      "UPDATE enrolment SET active = ? WHERE id_student = ? AND id_class = ?",
-      [active, id, id_class]
+      "UPDATE enrolment SET active = ? WHERE id_student = ? AND id_class = ? AND status = ?",
+      [active, id, id_class, status]
     );
 
     const updateResult = result as any;
