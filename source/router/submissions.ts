@@ -3,10 +3,11 @@ import {
   createSubmission,
   listSubmissionsByTeacher,
 } from "../controller/submissions.js";
+import { restricted } from "../middleware/authentication.js";
 
 const router = Router();
 
 // Submission Routes
-router.get("/", listSubmissionsByTeacher);
-router.post("/", createSubmission);
+router.get("/", restricted("Professor"), listSubmissionsByTeacher);
+router.post("/", restricted("Aluno"), createSubmission);
 export default router;
