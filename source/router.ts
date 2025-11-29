@@ -16,11 +16,11 @@ const router = Router();
 router.use("/users", restricted("Administrador"), users);
 router.use("/courses", restricted("Administrador"), courses);
 router.use("/classes", restricted("Administrador"), classes);
-router.use("/materials", restricted("Professor"), materials);
-router.use("/activities", restricted("Professor"), activities);
-router.use("/grades", restricted("Professor"), grades);
+router.use("/materials", restricted("Professor", "Aluno"), materials);
+router.use("/activities", restricted("Professor", "Aluino"), activities);
+router.use("/grades", restricted("Professor", "Aluno"), grades);
 router.use("/enrolments", restricted("Professor", "Aluno"), enrolment);
-router.use("/submissions", restricted("Professor"), submissions);
+router.use("/submissions", restricted("Professor", "Aluno"), submissions);
 router.use("/history", restricted("Aluno"), history);
 router.use("/me", me);
 
