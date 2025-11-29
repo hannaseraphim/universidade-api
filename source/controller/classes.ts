@@ -351,3 +351,29 @@ export async function getClass(req: express.Request, res: express.Response) {
     return res.status(500).json({ message: "Internal server error" });
   }
 }
+
+export async function getTopClasses(
+  req: express.Request,
+  res: express.Response
+) {
+  try {
+    const [rows] = await connection.execute(
+      `SELECT 
+    c.id AS class_id,
+    c.name AS class_name,
+    FORMAT(AVG(g.grade), 2) AS average_grade
+FROM classes c
+INNER JOIN activities a ON c.id = a.id_class
+INNER JOIN grades g ON g.id_activity = a.id
+WHERE c.archived = 0
+GROUP BY c.id, c.name
+ORDER BY average_grade DESC
+LIMIT 3;`
+    );
+
+    return res.status(200).json(rows);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+}
