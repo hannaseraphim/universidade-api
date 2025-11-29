@@ -361,13 +361,13 @@ export async function getTopClasses(
       `SELECT 
     c.id AS class_id,
     c.name AS class_name,
-    FORMAT(AVG(g.grade), 2) AS average_grade
+    ROUND(AVG(g.grade), 2) AS average_grade
 FROM classes c
 INNER JOIN activities a ON c.id = a.id_class
 INNER JOIN grades g ON g.id_activity = a.id
 WHERE c.archived = 0
 GROUP BY c.id, c.name
-ORDER BY average_grade DESC
+ORDER BY AVG(g.grade) DESC
 LIMIT 3;`
     );
 
