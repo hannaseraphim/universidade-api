@@ -48,6 +48,19 @@ export const createSubmission = async (
       return res.status(400).json({ message: "Activity not found" });
     }
 
+    const activity = (activityRows as any[])[0];
+
+    // 🔎 4.1 Verifica prazo da atividade
+    if (activity.due_date) {
+      const deadline = new Date(activity.due_date);
+      const now = new Date();
+      if (now > deadline) {
+        return res
+          .status(400)
+          .json({ message: "Due date expired for this activity" });
+      }
+    }
+
     // 5. Verifica se já existe nota publicada
     const [gradeRows] = await connection.execute(
       "SELECT * FROM grades WHERE id_student = ? AND id_activity = ?",
