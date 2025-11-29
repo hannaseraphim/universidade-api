@@ -239,3 +239,32 @@ export async function getCourse(req: express.Request, res: express.Response) {
     return res.status(500).json({ message: "Internal server error" });
   }
 }
+
+// Fetch a course's classes averages
+export async function getCourseClassAverages(
+  req: express.Request,
+  res: express.Response
+) {
+  const { id } = req.params;
+
+  try {
+    const [rows] = await connection.execute(
+      `SELECT 
+         c.id AS class_id,
+         c.name AS class_name,
+         ROUND(AVG(g.grade), 2) AS average_grade
+       FROM classes c
+       INNER JOIN courses co ON c.id_course = co.id
+       INNER JOIN activities a ON c.id = a.id_class
+       INNER JOIN grades g ON g.id_activity = a.id
+       WHERE co.id = ?
+       GROUP BY c.id, c.name`,
+      [id]
+    );
+
+    return res.status(200).json(rows);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+}
