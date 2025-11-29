@@ -256,3 +256,32 @@ export async function updateUser(req: express.Request, res: express.Response) {
     return res.status(500).json({ message: "Internal server error" });
   }
 }
+
+export async function getTopTeacher(
+  req: express.Request,
+  res: express.Response
+) {
+  try {
+    const [rows] = await connection.execute(
+      `SELECT 
+         u.id AS teacher_id,
+         u.name AS teacher_name,
+         COUNT(c.id) AS active_classes
+       FROM classes c
+       INNER JOIN users u ON c.id_teacher = u.id
+       WHERE c.archived = 0
+       GROUP BY u.id, u.name
+       ORDER BY active_classes DESC
+       LIMIT 1`
+    );
+
+    if ((rows as any[]).length === 0) {
+      return res.status(404).json({ message: "No active classes found" });
+    }
+
+    return res.status(200).json((rows as any[])[0]);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+}
