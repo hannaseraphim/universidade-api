@@ -64,7 +64,7 @@ CREATE TABLE enrolment (
   active      BOOLEAN NOT NULL DEFAULT true,
   status      ENUM("passed", "failed", "enrolled") DEFAULT ("enrolled"),
 
-  PRIMARY KEY(id_student, id_class),
+  PRIMARY KEY(id_student, id_class, enrolled_at),
   FOREIGN KEY(id_student) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY(id_class) REFERENCES classes(id) ON DELETE CASCADE
 );
