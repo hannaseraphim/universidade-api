@@ -51,7 +51,44 @@ export async function listActivities(
   res: express.Response
 ) {
   try {
-    const [rows] = await connection.execute("SELECT * FROM activities");
+    let rows;
+
+    if (req.user?.profiles.some((p: any) => p.name === "Administrador")) {
+      // 🔎 Admin: todas as atividades
+      [rows] = await connection.execute(
+        `SELECT a.id, a.title, a.description, a.due_date, 
+                c.name AS class_name, co.name AS course_name
+         FROM activities a
+         INNER JOIN classes c ON a.id_class = c.id
+         INNER JOIN courses co ON c.id_course = co.id`
+      );
+    } else if (req.user?.profiles.some((p: any) => p.name === "Professor")) {
+      // 🔎 Professor: atividades das turmas que ele leciona
+      [rows] = await connection.execute(
+        `SELECT a.id, a.title, a.description, a.due_date, 
+                c.name AS class_name, co.name AS course_name
+         FROM activities a
+         INNER JOIN classes c ON a.id_class = c.id
+         INNER JOIN courses co ON c.id_course = co.id
+         WHERE c.id_teacher = ?`,
+        [req.user.id]
+      );
+    } else if (req.user?.profiles.some((p: any) => p.name === "Aluno")) {
+      // 🔎 Aluno: atividades das turmas em que está matriculado
+      [rows] = await connection.execute(
+        `SELECT a.id, a.title, a.description, a.due_date, 
+                c.name AS class_name, co.name AS course_name
+         FROM activities a
+         INNER JOIN classes c ON a.id_class = c.id
+         INNER JOIN courses co ON c.id_course = co.id
+         INNER JOIN enrolment e ON e.id_class = c.id
+         WHERE e.id_student = ? AND e.active = 1`,
+        [req.user.id]
+      );
+    } else {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
     return res.status(200).json(rows);
   } catch (error) {
     console.error(error);
