@@ -78,7 +78,7 @@ export async function createEnrolment(
         .status(409)
         .json({ message: "Enrolment already exists and not failed" });
     }
- 
+
     // 🔎 5.1 Verifica se o aluno já foi reprovado nesse curso
     const [priorityRows] = await connection.execute(
       `SELECT e.id_student
@@ -269,4 +269,15 @@ export async function deleteEnrolmentByStudentAndClassId(
     console.error(error);
     return res.sendStatus(500);
   }
+}
+
+export async function listAllAcitveEnrolments(
+  req: express.Request,
+  res: express.Response
+) {
+  const [rows] = await connection.execute(
+    "SELECT * FROM enrolment WHERE active = 1"
+  );
+
+  return res.status(200).json(rows);
 }
