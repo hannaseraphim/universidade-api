@@ -179,6 +179,26 @@ export async function deleteCourse(
 // Fetch a course by id with its classes
 export async function getCourse(req: express.Request, res: express.Response) {
   const { id } = req.params;
+  const user = req.user as any;
+
+  // Se for aluno, verificar se está matriculado nesse curso
+  if (user.profiles.some((p: any) => p.name === "Aluno")) {
+    const [rows] = await connection.execute(
+      `SELECT e.id_student
+         FROM enrolment e
+         INNER JOIN classes c ON e.id_class = c.id
+         WHERE e.id_student = ? 
+           AND c.id_course = ? 
+           AND e.active = 1`,
+      [user.id, id]
+    );
+
+    if ((rows as any[]).length === 0) {
+      return res
+        .status(403)
+        .json({ message: "Access denied: not enrolled in this course" });
+    }
+  }
 
   try {
     const [rows] = await connection.execute(
