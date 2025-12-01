@@ -6,6 +6,7 @@ import { env } from "../config/env.js";
 interface Enrolment {
   classId: number;
   className: string;
+  courseId: string;
   courseName: string;
 }
 
@@ -45,6 +46,7 @@ export async function showLogged(req: express.Request, res: express.Response) {
       e.id_class,
       c.name AS class_name,
       co.name AS course_name,
+      co.id AS course_id,
       g.id_activity,
       a.title AS activity_title,
       g.grade,
@@ -95,6 +97,7 @@ export async function showLogged(req: express.Request, res: express.Response) {
         user.enrolments.push({
           classId: r.id_class,
           className: r.class_name,
+          courseId: r.course_id,
           courseName: r.course_name,
         });
       }
