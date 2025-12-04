@@ -313,9 +313,7 @@ export async function getTopStudent(
        ORDER BY approved_courses DESC
        LIMIT 1`
     );
-
-    console.log(rows);
-
+    
     if ((rows as any[]).length === 0) {
       return res.status(404).json({ message: "No approved courses found" });
     }

@@ -186,8 +186,6 @@ export async function updateClass(req: express.Request, res: express.Response) {
       return res.sendStatus(404);
     }
 
-    console.log(id_course);
-
     // Verifica se o curso existe
     const [courseRows] = await connection.execute(
       "SELECT id FROM courses WHERE id = ?",
