@@ -96,13 +96,13 @@ export async function listActivities(
   }
 }
 
-// Fetches an activity by id
+// Fetches an activity by class id
 export async function getActivity(req: express.Request, res: express.Response) {
   const { id } = req.params;
 
   try {
     const [rows] = await connection.execute<RowDataPacket[]>(
-      "SELECT * FROM activities WHERE id = ?",
+      "SELECT * FROM activities WHERE id_class = ?",
       [id]
     );
 
