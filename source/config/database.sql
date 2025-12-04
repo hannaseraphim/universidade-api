@@ -59,13 +59,14 @@ CREATE TABLE classes (
 -- =========================
 CREATE TABLE enrolment (
   id_student  INT NOT NULL,
+  id_profile  INT NOT NULL, -- NOVO ATRIBUTO PARA RECEBER O PERFIL DO USUARIO (PERFIL DE ALUNO)
   id_class    INT NOT NULL,
   enrolled_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   active      BOOLEAN NOT NULL DEFAULT true,
   status      ENUM("passed", "failed", "enrolled") DEFAULT ("enrolled"),
 
   PRIMARY KEY(id_student, id_class, enrolled_at),
-  FOREIGN KEY(id_student) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY(id_student, id_profile) REFERENCES associated(id_user, id_profile) ON DELETE CASCADE, -- NOVA RELACAO PARA DELETAR USUARIO QUE NAO EH MAIS ALUNO
   FOREIGN KEY(id_class) REFERENCES classes(id) ON DELETE CASCADE
 );
 
