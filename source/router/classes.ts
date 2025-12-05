@@ -6,12 +6,16 @@ import {
   getTopClasses,
   listClasses,
   updateClass,
+  getMyClasses,
+  getAvailableClasses,
 } from "../controller/classes.js";
 
 const router = Router();
 
 // /classes/ Routes
+router.get("/available", getAvailableClasses);
 router.get("/", listClasses);
+router.get("/myClasses", getMyClasses);
 router.get("/topClasses", getTopClasses);
 router.get("/:id", getClass);
 router.post("/", createClass);

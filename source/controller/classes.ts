@@ -378,3 +378,72 @@ LIMIT 3;`
     return res.status(500).json({ message: "Internal server error" });
   }
 }
+
+// Fetches classes taught by user (if is teacher)
+export async function getMyClasses(
+  req: express.Request,
+  res: express.Response
+) {
+  const userId = req.user?.id;
+
+  try {
+    const [teacherRows] = await connection.execute(
+      "SELECT c.* FROM classes c WHERE c.id_teacher = ?",
+      [userId]
+    );
+
+    const [studentRows] = await connection.execute(
+      "SELECT c.* FROM classes c INNER JOIN enrolment e ON c.id = e.id_class WHERE e.id_student = ? AND e.active = 1",
+      [userId]
+    );
+
+    return res.status(200).json({
+      teaching: teacherRows ? teacherRows : "Not a teacher in any class",
+      student: studentRows
+        ? studentRows
+        : "Not enrolled as student in any class",
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+// Fetches classes avaible for enrolment
+export async function getAvailableClasses(
+  req: express.Request,
+  res: express.Response
+) {
+  const userId = req.user?.id;
+
+  try {
+    const [rows] = await connection.execute(
+      `SELECT 
+      c.id,
+      c.id_course,
+      c.starts_on,
+      c.ends_on,
+      c.period,
+      c.name,
+      c.max_students,
+      c.archived,
+      u.name AS teacher_name
+   FROM classes c
+   JOIN users u ON c.id_teacher = u.id
+   WHERE c.archived = 0
+     AND c.id_teacher != ?
+     AND NOT EXISTS (
+       SELECT 1
+       FROM enrolment e
+       WHERE e.id_class = c.id
+         AND e.id_student = ?
+     );`,
+      [userId, userId]
+    );
+
+    return res.status(200).json(rows);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+}

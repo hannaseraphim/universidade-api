@@ -9,7 +9,7 @@ export async function createEnrolment(
 ) {
   const { id_student, id_class, enrolled_at, active } = req.body;
 
-  if (!id_student || !id_class || !enrolled_at || active === undefined) {
+  if (!id_student || !id_class === undefined) {
     return res.status(400).json({ message: "Missing fields" });
   }
 
@@ -24,7 +24,7 @@ export async function createEnrolment(
       [id_student]
     );
     if ((studentRows as any[]).length === 0) {
-      return res.status(400).json({ message: "Student not found" });
+      return res.status(400).json({ message: "Not student" });
     }
 
     // 2. Verifica se a turma existe
@@ -54,8 +54,7 @@ export async function createEnrolment(
         id_class: classData.id,
         teacherId: classData.id_teacher,
         id_student,
-        message:
-          "A matrícula de um aluno foi recusada por falta de vagas. Avalie aumentar o limite da turma.",
+        message: `A matrícula de um aluno na turma de ID: ${classData.id} foi recusada por falta de vagas. Avalie aumentar o limite da turma.`,
         timestamp: new Date().toISOString(),
       });
       return res
@@ -91,13 +90,16 @@ export async function createEnrolment(
     );
     const priority = (priorityRows as any[]).length > 0;
 
-    // 🔁 5.2 Deleta a matrícula
+    // 🔁 5.2 Deleta a matrícula se tiver prioridade
     if (priority) {
       const [deleteRows] = await connection.execute(
         "DELETE FROM enrolment WHERE id_student = ? AND id_class = ? AND status = 'failed'",
         [id_student, id_class]
       );
     }
+
+    const enrolled_at = new Date().toISOString().split("T")[0];
+    const active = 1;
 
     // 6. Cria matrícula
     await connection.execute(
